@@ -8,7 +8,8 @@ Live at **https://bio-study.adrian11jonker.workers.dev**
 ## What it does
 - Opens on a **Dashboard**: greeting, a clickable plant cell, totals, your topics and latest notes. The dark sidebar holds search, topics, Flashcards, Paste notes and Backup.
 - **Topics work like folders** (like chapters in Mathspace): a topic can hold sub-topics as well as notes. The sidebar is a tree (▸ opens a topic), each topic page has a breadcrumb trail, folder tiles for its sub-topics, and **+ Sub-topic** / **Move** buttons. Flashcards for a topic include its sub-topics.
-- Click a note card for the definition, key points and labelled diagram.
+- Click a note card and it opens as its own page (with its own address, so Back works and Ctrl-click opens a new tab): definition, key points, the parts to know, a **textbook diagram** and your own hand-drawn diagram.
+- **Textbook diagrams** come from Wikimedia Commons (`img/ref/`, credits in `refs.js`, shown under each one). They're public domain or Creative Commons, chosen to match the notebook drawings.
 - **+ New topic**: ready-made topics (Cell transport, Enzymes, Photosynthesis, Respiration, Cell division, DNA & genetics, Microscopy, Specialised cells), each with starter definitions, or a blank one.
 - **Cell explorer**: click part of an animal, plant or bacterial cell to open that organelle's notes.
 - **Hide the labels** on a diagram to test yourself, then click each label to reveal it.
@@ -36,6 +37,8 @@ style.css             all the styling (Coop Ledger-style layout)
 app.js                everything the app does: topics, cards, dialogs, paste, flashcards, saving
 data.js               the notes from my notebook (the starting notes)
 img/                  photos of my hand-drawn diagrams
+img/ref/              textbook diagrams from Wikimedia Commons (credits in refs.js)
+refs.js               which textbook diagram goes with which note, and who made it
 presets.js            the ready-made topics
 diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline
