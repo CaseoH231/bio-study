@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
     for (const id of ids) {
       await p.click(`.card[data-entry="${id}"]`);                // opens the note's own page
       await p.waitForSelector('.note-page');
-      figs += await p.locator('.note-page svg.dg').count();
+      figs += await p.locator('.note-page figure.ref img, .note-page svg.dg').count();
       const img = p.locator('.note-page .myimg img');
       if (await img.count()) {
         photos++;

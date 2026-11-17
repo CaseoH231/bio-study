@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="620"
+xmlns:xlink="http://www.w3.org/1999/xlink" height="620">
+<circle fill="#5B6" cx="310" cy="310" r="300"/>
+<circle fill="#6CD" cx="310" cy="310" r="275"/>
+<path fill="#77B" d="m175.5,234.3-40.5,71.8 44.4,92.7
+82,5 103-1.3 95.4,20.9 35.3-57.5
+l7.8-83.6-43.1-48.3-71.8-13-98,2.6"/>
+
+<g font-family="Arial, Helvetica, sans-serif" font-size="26" text-anchor="middle">
+ <g transform="translate(310,160)"><text>Lipid bilayer membrane</text></g>
+ <g transform="translate(310,294)"><text>Crystalloid core</text></g>
+ <g transform="translate(310,326)" font-size="20"><text>(not always present)</text></g>
+ <g transform="rotate(-37 350 580)translate(500 660)" font-size="20"><text>Single membrane</text></g>
+</g>
+
+<g id="g"><g id="f"><g id="e"><g id="d"><g id="c"><g id="b"><g id="a">
+<path id="s" stroke="#093" d="m310,10v25"/>
+<use xlink:href="#s" transform="rotate(1 310,310)"/>
+<circle id="k" fill="#FF6" stroke="#093" cx="310" cy="35" r="5.0"/>
+<use xlink:href="#k" transform="translate(0-25)rotate(1 310,310)"/></g>
+<use xlink:href="#a" transform="rotate(2 310,310)"/></g> 
+<use xlink:href="#b" transform="rotate(4 310,310)"/></g> 
+<use xlink:href="#c" transform="rotate(8 310,310)"/></g> 
+<use xlink:href="#d" transform="rotate(16 310,310)"/></g> 
+<use xlink:href="#e" transform="rotate(32 310,310)"/></g> 
+<use xlink:href="#f" transform="rotate(64 310,310)"/></g> 
+<use xlink:href="#g" transform="rotate(128 310,310)"/> 
+<use xlink:href="#g" transform="rotate(256 310,310)"/> 
+<circle cx="400" cy="38" r="4"/>
+<path stroke="#000" stroke-width="2" d="m310,130 90-92"/>
+</svg>

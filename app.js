@@ -1,5 +1,6 @@
 import { STARTER } from './data.js';
 import { PRESETS } from './presets.js';
+import { REFS } from './refs.js';
 import { DIAGRAMS, DIAGRAM_WORDS, CELLS, diagramSVG, cellSVG } from './diagrams.js';
 
 // ---------- saving ----------
@@ -129,14 +130,15 @@ function render() {
     <nav class="crumbs" aria-label="You are here"><a href="#/">Dashboard</a>${ancestors(t).map((a) =>
       ` <span>›</span> <a href="${hrefTopic(a.id)}">${esc(a.name)}</a>`).join('')} <span>›</span> <b>${esc(t.name)}</b></nav>
     <div class="bar" style="--c:${t.color}"><h2><span class="tdot"></span>${esc(t.name)}</h2><div class="tools">
-      <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Colour</button><button data-act="move-topic">Move</button>
-      <button class="danger" data-act="delete-topic">Delete</button>
+      <details class="more topic-menu"><summary aria-label="Topic options">⋯</summary><div class="menu">
+        <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Change colour</button>
+        <button data-act="move-topic">Move into another topic…</button><button class="danger" data-act="delete-topic">Delete topic…</button></div></details>
       <button data-act="sub-topic">+ Sub-topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
     <p class="lead">${subs.length ? `${plural(subs.length, 'sub-topic')} · ` : ''}${plural(total, 'note')}${subs.length && t.entries.length ? ` (${t.entries.length} here)` : ''}</p>
     ${subs.length ? `<h3 class="sect-h">Sub-topics</h3><div class="tgrid">${subs.map(folderCard).join('')}</div>` : ''}
-    ${hasCells ? explorer() : ''}
     ${t.entries.length ? `${subs.length ? '<h3 class="sect-h">Notes</h3>' : ''}<div class="grid">${t.entries.map((e) => card(e, t)).join('')}</div>`
-      : subs.length ? '' : `<div class="empty"><p>Nothing in this topic yet.</p><button class="primary" data-act="add">+ Add a note</button><button data-act="sub-topic">+ Sub-topic</button><button data-act="paste">Paste notes</button></div>`}`;
+      : subs.length ? '' : `<div class="empty"><p>Nothing in this topic yet.</p><button class="primary" data-act="add">+ Add a note</button><button data-act="sub-topic">+ Sub-topic</button><button data-act="paste">Paste notes</button></div>`}
+    ${hasCells ? explorer() : ''}`;
 }
 
 // A topic shown as a folder tile, like a chapter.
@@ -201,8 +203,14 @@ function enterTopic(id) {
   }
 }
 
+// A textbook diagram from Wikimedia Commons, with its credit line.
+const refFigure = (ref, alt) => `<figure class="ref"><img src="${ref.src}" alt="${esc(alt)}" loading="lazy">
+  <figcaption>Diagram: <a href="${ref.page}" target="_blank" rel="noopener">${esc(ref.title)}</a> by ${esc(ref.by)} ·
+  ${ref.licenseUrl ? `<a href="${ref.licenseUrl}" target="_blank" rel="noopener">${ref.license}</a>` : ref.license}, via Wikimedia Commons${ref.edited ? ` (${esc(ref.edited)})` : ''}</figcaption></figure>`;
+
 function card(e, t, showTopic = false) {
-  const thumb = e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
+  const ref = REFS[e.diagram];
+  const thumb = ref ? `<img src="${ref.src}" alt="" loading="lazy">` : e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
     : e.image ? `<img src="${e.image}" alt="">` : `<span class="initial">${esc(e.title[0] || '?')}</span>`;
   return `<a class="card" href="${hrefNote(e.id)}" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
     <div class="thumb">${thumb}</div>
@@ -211,9 +219,11 @@ function card(e, t, showTopic = false) {
 }
 
 function explorer() {
-  return `<section class="explorer"><div class="ex-head"><h3>Cell explorer</h3><p>Click any part of the cell to open its notes.</p>
-    <div class="tabs">${Object.entries(CELLS).map(([k, c]) => `<button data-cell="${k}" class="${k === cellKind ? 'on' : ''}">${c.name}</button>`).join('')}</div></div>
-    <div class="ex-svg">${cellSVG(cellKind)}</div><p class="ex-tip" id="ex-tip">&nbsp;</p></section>`;
+  let shut = false;
+  try { shut = localStorage.getItem('bio-study-explorer') === 'shut'; } catch { /* default open */ }
+  return `<details class="explorer" ${shut ? '' : 'open'}><summary><h3>Cell explorer</h3><p>Click any part of a cell to open its notes.</p></summary>
+    <div class="tabs">${Object.entries(CELLS).map(([k, c]) => `<button data-cell="${k}" class="${k === cellKind ? 'on' : ''}">${c.name}</button>`).join('')}</div>
+    <div class="ex-svg">${cellSVG(cellKind)}</div><p class="ex-tip" id="ex-tip">&nbsp;</p></details>`;
 }
 
 function openPart(key, name) {
@@ -250,6 +260,7 @@ $('#main').addEventListener('click', (ev) => {
   if (p) return openPart(p.dataset.k, $('title', p).textContent);
   const act = ev.target.closest('[data-act]')?.dataset.act;
   const t = topicOf(current);
+  ev.target.closest('details.topic-menu')?.removeAttribute('open');
   if (act === 'add') openEdit(null, { topic: current === HOME ? (all()[0]?.t.id || db.topics[0]?.id) : current });
   if (act === 'sub-topic') openTopicPicker(t.id);
   if (act === 'edit-note') openEdit(noteId);
@@ -272,6 +283,9 @@ $('#main').addEventListener('click', (ev) => {
     }
   }
 });
+$('#main').addEventListener('toggle', (ev) => {
+  if (ev.target.matches?.('details.explorer')) try { localStorage.setItem('bio-study-explorer', ev.target.open ? 'open' : 'shut'); } catch { /* fine */ }
+}, true);
 $('#main').addEventListener('keydown', (ev) => {
   const p = ev.target.closest('.part');
   if (p && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openPart(p.dataset.k, $('title', p).textContent); }
@@ -350,7 +364,8 @@ function notePage() {
   const d = DIAGRAMS[e.diagram];
   const sib = t.entries, i = sib.indexOf(e);
   const prev = sib[i - 1], next = sib[i + 1];
-  const hasFig = d || e.image;
+  const ref = REFS[e.diagram];
+  const hasFig = ref || d || e.image;
   return `<nav class="crumbs" aria-label="You are here">${crumbsFor(t)} <span>›</span> <b>${esc(e.title)}</b></nav>
     <article class="note-page" style="--c:${colorOf(e, t)}">
       <div class="bar"><h2>${esc(e.title)}</h2><div class="tools">
@@ -360,11 +375,11 @@ function notePage() {
         <div class="d-text">
           <p class="def">${esc(e.definition) || '<i>No definition yet – press Edit to add one.</i>'}</p>
           ${e.notes?.length ? `<h4>Key points</h4><ul>${e.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
-          ${d ? `<h4>Labels</h4><ol class="legend">${d.labels.map((l, j) => `<li data-i="${j}" style="--lc:${l[1]}"><b>${l[0]}</b> <span>– ${l[6]}</span></li>`).join('')}</ol>` : ''}
+          ${d ? `<h4>Parts to know</h4><ol class="legend">${d.labels.map((l, j) => `<li data-i="${j}" style="--lc:${l[1]}"><b>${l[0]}</b> <span>– ${l[6]}</span></li>`).join('')}</ol>
+            <label class="quiz-toggle"><input type="checkbox" id="hide-labels"> Test yourself: hide the part names (click one to reveal it)</label>` : ''}
         </div>
         ${hasFig ? `<div class="d-fig">
-          ${d ? `<div class="fig">${diagramSVG(e.diagram)}</div>
-            <label class="quiz-toggle"><input type="checkbox" id="hide-labels"> Hide the labels to test yourself (click a label in the list to reveal it)</label>` : ''}
+          ${ref ? refFigure(ref, `Diagram of ${e.title}`) : d ? `<div class="fig">${diagramSVG(e.diagram)}</div>` : ''}
           ${e.image ? `<figure class="myimg"><img src="${e.image}" alt="My diagram of ${esc(e.title)}"><figcaption>My own diagram</figcaption></figure>` : ''}
         </div>` : ''}
       </div>
@@ -390,7 +405,7 @@ function bindNote() {
     li.addEventListener('mouseleave', () => hl(null));
     li.addEventListener('click', () => {
       li.classList.toggle('show');
-      $(`.lb[data-i="${li.dataset.i}"]`, svg)?.classList.toggle('show', li.classList.contains('show'));
+      if (svg) $(`.lb[data-i="${li.dataset.i}"]`, svg)?.classList.toggle('show', li.classList.contains('show'));
     });
   });
   svg && $$('.lb', svg).forEach((g) => {
@@ -402,6 +417,13 @@ function bindNote() {
     $$('.show', page).forEach((x) => x.classList.remove('show'));
   });
 }
+
+document.addEventListener('keydown', (ev) => {
+  const typing = ev.target.matches('input, textarea, select');
+  if (ev.key === '/' && !typing && !dlg.open) { ev.preventDefault(); $('#search').focus(); }
+  if (ev.key === 'Escape' && ev.target.id === 'search' && query) { ev.target.value = ''; query = ''; render(); }
+});
+$('#search').placeholder = 'Search your notes…  ( / )';
 
 // On a note page: ← → for the previous / next note, Esc to go back to its topic.
 document.addEventListener('keydown', (ev) => {
@@ -620,7 +642,12 @@ function runCards(deck, mode) {
       return;
     }
     const { e, t } = queue[0];
-    const fig = DIAGRAMS[e.diagram] ? `<div class="fig">${diagramSVG(e.diagram, { labels: false })}</div>` : e.image ? `<figure class="myimg"><img src="${e.image}" alt=""></figure>` : '';
+    const ref = REFS[e.diagram];
+    const refOnlyHere = ref && all().filter((x) => REFS[x.e.diagram] === ref).length === 1;
+    // An unlabelled outline gives nothing away; labelled pictures are the fallback.
+    const fig = DIAGRAMS[e.diagram] ? `<div class="fig">${diagramSVG(e.diagram, { labels: false })}</div>`
+      : refOnlyHere ? `<figure class="ref"><img src="${ref.src}" alt=""></figure>`
+      : e.image ? `<figure class="myimg"><img src="${e.image}" alt=""></figure>` : '';
     const q = mode === 'def' ? esc(e.definition) : mode === 'name' ? `<b>${esc(e.title)}</b>` : `<p>Which organelle is this?</p>${fig}`;
     const a = mode === 'name' ? esc(e.definition) : esc(e.title);
     openDialog(`
@@ -665,7 +692,7 @@ $('#btn-reset').onclick = () => {
   if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;
   db = clone(STARTER); save(); go('#/'); $('.more').open = false;
 };
-document.addEventListener('click', (ev) => { const m = $('.more'); if (m.open && !m.contains(ev.target)) m.open = false; });
+document.addEventListener('click', (ev) => { $$('details.more[open]').forEach((m) => { if (!m.contains(ev.target)) m.open = false; }); });
 
 // ---------- install as an app ----------
 let installEvent = null;
