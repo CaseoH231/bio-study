@@ -6,43 +6,54 @@ const { chromium } = require('playwright');
   const errs = []; p.on('pageerror', (e) => errs.push(e.message));
   p.on('dialog', (d) => d.accept('Test topic'));
   await p.goto('http://localhost:8766/');
-  await p.click('.topic >> text=Headstart');                     // a folder: opens to show its sub-topics
+  // Opening a topic changes the address; wait until its page is showing.
+  const openT = async (name) => {
+    await p.click(`#topics .topic >> text=${name}`);
+    await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), name);
+  };
+  await openT('Headstart');                                        // a folder: opens to show its sub-topics
   const tiles = await p.$$eval('.tcard h3', (h) => h.map((x) => x.textContent.trim()).join('|'));
   const topics = await p.$$eval('#topics .topic[data-topic^="t-"] .nm', (t) => t.map((x) => x.textContent));
   let cards = 0, figs = 0, photos = 0, broken = 0;
   for (const name of topics) {
-    await p.click(`.topic >> text=${name}`);
+    await openT(name);
     const ids = await p.$$eval('.card', (cs) => cs.map((c) => c.dataset.entry));
     cards += ids.length;
     for (const id of ids) {
-      await p.click(`.card[data-entry="${id}"]`);
-      figs += await p.locator('#dlg svg.dg').count();
-      const img = p.locator('#dlg .myimg img');
+      await p.click(`.card[data-entry="${id}"]`);                // opens the note's own page
+      await p.waitForSelector('.note-page');
+      figs += await p.locator('.note-page svg.dg').count();
+      const img = p.locator('.note-page .myimg img');
       if (await img.count()) {
         photos++;
         await img.evaluate((el) => el.complete || new Promise((r) => { el.onload = el.onerror = r; }));
         if (!(await img.evaluate((el) => el.naturalWidth > 0))) broken++;
       }
-      await p.keyboard.press('Escape');
+      await p.goBack(); await p.waitForSelector('.card');         // Back returns to the topic
     }
   }
+  const href = await p.getAttribute('.card', 'href');              // a real link, so Ctrl-click opens a new tab
+  const tab = await b.newPage(); await tab.goto('http://localhost:8766/' + href);
+  const tabTitle = await tab.textContent('.note-page h2'); await tab.close();
 
-  await p.click('.topic >> text=Plant-only organelles');
+  await openT('Plant-only organelles');
   await p.click('.part[data-k=plasmodesmata] rect >> nth=0');
-  const opened = await p.textContent('#dlg h2'); await p.keyboard.press('Escape');
+  const opened = await p.textContent('.note-page h2');
+  const crumbNote = (await p.textContent('.crumbs')).replace(/\s+/g, ' ');
+  await p.keyboard.press('Escape'); await p.waitForFunction(() => !document.querySelector('.note-page')); const backTo = await p.textContent('.bar h2');
 
   await p.click('#btn-paste');
   await p.fill('#paste-text', 'Golgi apparatus: packages proteins\n- makes vesicles\nEnzyme - a biological catalyst\n\nActive site\nWhere the substrate binds');
-  await p.selectOption('#paste-topic', '__new'); await p.click('#paste-go');
+  await p.selectOption('#paste-topic', '__new'); await p.click('#paste-go'); await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), 'Test topic');
   const pasted = await p.$$eval('.card h3', (h) => h.map((x) => x.textContent));
-  await p.click('#add-topic'); await p.click('.preset >> text=Enzymes');
+  await p.click('#add-topic'); await p.click('.preset >> text=Enzymes'); await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), 'Enzymes');
   const preset = await p.$$eval('.card', (c) => c.length);
   await p.click('#add-topic'); await p.click('.preset >> text=Enzymes'); // adding again must not duplicate
   const preset2 = await p.$$eval('.card', (c) => c.length);
 
   // Make a sub-topic inside a topic, then check the breadcrumb trail.
-  await p.click('.topic >> text=Animal cells'); await p.click('[data-act=sub-topic]');
-  await p.fill('#blank-topic input', 'Cell division'); await p.click('#blank-topic button');
+  await openT('Animal cells'); await p.click('[data-act=sub-topic]');
+  await p.fill('#blank-topic input', 'Cell division'); await p.click('#blank-topic button'); await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), 'Cell division');
   const crumbs = await p.textContent('.crumbs');
 
   const roots = async () => p.$$eval('#topics > .node > .topic .nm', (t) => t.map((x) => x.textContent).join('|'));
@@ -60,9 +71,10 @@ const { chromium } = require('playwright');
   const upgraded2 = await roots();
   await p.evaluate(() => localStorage.clear());
 
-  console.log('tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
+  console.log('href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
     'pasted', pasted.join('|'), 'preset', preset, preset2, 'upgraded', upgraded, 'errors', errs.length);
-  const ok = tiles === 'Plant-only organelles|Shared eukaryotic organelles|Animal cells' && topics.length === 4 &&
+  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Plant-only organelles › Plasmodesmata') &&
+    backTo.includes('Plant-only organelles') && tiles === 'Plant-only organelles|Shared eukaryotic organelles|Animal cells' && topics.length === 4 &&
     crumbs.replace(/\s+/g, ' ').includes('Headstart › Animal cells › Cell division') && upgraded2 === 'Headstart|My topic' && cards === 14 && figs === 14 && photos === 6 && !broken && opened === 'Plasmodesmata' &&
     pasted.length === 3 && pasted.includes('Active site') && preset === 6 && preset2 === 6 &&
     upgraded === 'Headstart|My topic' && !errs.length;

@@ -259,3 +259,20 @@ svg.cell { max-height: 330px; }
   .topic { padding-left: 12px; }
   .topic .tw { display: none; }
 }
+
+/* notes and topics are links (Ctrl-click opens a new tab) */
+a.card, a.tcard { color: inherit; text-decoration: none; background: var(--panel); cursor: pointer; }
+a.tcard { display: block; }
+a.lrow { color: inherit; text-decoration: none; cursor: pointer; }
+a.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+  padding: 7px 14px; font-weight: 600; color: inherit; text-decoration: none; }
+a.btn:hover { border-color: var(--pri); }
+.crumbs a { padding: 2px 4px; color: var(--muted); text-decoration: none; font-weight: 500; }
+.crumbs a:hover { color: var(--ink); text-decoration: underline; }
+
+/* a note's own page */
+.note-page > .bar h2 { color: var(--c); }
+.note-page > .chips { margin: 0 0 14px; }
+.note-page .d-body { background: var(--panel); border: 1px solid var(--line); border-top: 6px solid var(--c); border-radius: var(--radius); padding: 22px; }
+.note-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+@media (max-width: 800px) { .note-page .d-body { padding: 16px; } }

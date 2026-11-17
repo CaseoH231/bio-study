@@ -51,7 +51,7 @@ const HOME = '__home';
 let current = HOME;
 let query = '';
 let cellKind = 'animal';
-let shownIds = []; // order of cards on screen, for next / previous
+let noteId = null; // the note whose page is open, if any
 
 // ---------- helpers ----------
 const $ = (s, el = document) => el.querySelector(s);
@@ -115,20 +115,19 @@ function render() {
   if (query) {
     const q = query.toLowerCase();
     const hits = all().filter(({ e }) => [e.title, e.definition, e.found, ...(e.notes || [])].join(' ').toLowerCase().includes(q));
-    shownIds = hits.map((h) => h.e.id);
     main.innerHTML = `<div class="bar"><h2>Search</h2></div><p class="lead">${plural(hits.length, 'note')} matching “${esc(query)}”</p>` +
       (hits.length ? `<div class="grid">${hits.map(({ e, t }) => card(e, t, true)).join('')}</div>` : '<p class="empty">Nothing found.</p>');
     return;
   }
-  if (current === HOME) { main.innerHTML = dashboard(); shownIds = []; return; }
+  if (noteId && find(noteId)) { main.innerHTML = notePage(); return bindNote(); }
+  if (current === HOME) { main.innerHTML = dashboard(); return; }
   const t = topicOf(current);
   const subs = kids(t.id);
-  shownIds = t.entries.map((e) => e.id);
   const hasCells = notesIn(t).some(({ e }) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall', 'plasmodesmata'].includes(e.diagram));
   const total = notesIn(t).length;
   main.innerHTML = `
-    <nav class="crumbs" aria-label="You are here"><button data-topic="${HOME}">Dashboard</button>${ancestors(t).map((a) =>
-      ` <span>›</span> <button data-topic="${a.id}">${esc(a.name)}</button>`).join('')} <span>›</span> <b>${esc(t.name)}</b></nav>
+    <nav class="crumbs" aria-label="You are here"><a href="#/">Dashboard</a>${ancestors(t).map((a) =>
+      ` <span>›</span> <a href="${hrefTopic(a.id)}">${esc(a.name)}</a>`).join('')} <span>›</span> <b>${esc(t.name)}</b></nav>
     <div class="bar" style="--c:${t.color}"><h2><span class="tdot"></span>${esc(t.name)}</h2><div class="tools">
       <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Colour</button><button data-act="move-topic">Move</button>
       <button class="danger" data-act="delete-topic">Delete</button>
@@ -144,9 +143,9 @@ function render() {
 function folderCard(t) {
   const subs = kids(t.id), n = notesIn(t);
   const inside = subs.length ? subs.map((x) => x.name) : t.entries.map((e) => e.title);
-  return `<button class="tcard" data-topic="${t.id}" style="--c:${t.color}">
+  return `<a class="tcard" href="${hrefTopic(t.id)}" style="--c:${t.color}">
     <h3>${FOLDER}${esc(t.name)}</h3><span class="tn">${subs.length ? `${plural(subs.length, 'sub-topic')} · ` : ''}${plural(n.length, 'note')}</span>
-    <div class="chips">${inside.slice(0, 5).map((x) => `<span class="chip">${esc(x)}</span>`).join('')}${inside.length > 5 ? `<span class="chip">+${inside.length - 5} more</span>` : ''}</div></button>`;
+    <div class="chips">${inside.slice(0, 5).map((x) => `<span class="chip">${esc(x)}</span>`).join('')}${inside.length > 5 ? `<span class="chip">+${inside.length - 5} more</span>` : ''}</div></a>`;
 }
 
 const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
@@ -168,27 +167,47 @@ function dashboard() {
       <button class="tcard add" data-act="new-topic"><h3>+ New topic</h3><span class="tn">Ready-made or blank</span></button></div>`
     : '<div class="empty"><p>You have no topics yet.</p><button class="primary" data-act="new-topic">+ New topic</button></div>'}
     ${recent.length ? `<h3 class="sect-h">Latest notes</h3><div class="card-list"><ul class="list">${recent.map(({ e, t }) =>
-      `<li><button class="lrow" data-entry="${e.id}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></button></li>`).join('')}</ul></div>` : ''}`;
+      `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`).join('')}</ul></div>` : ''}`;
 }
 
-function openTopic(id) {
-  current = id; query = ''; $('#search').value = '';
+// ---------- pages have addresses, so Back works and Ctrl-click opens a real new tab ----------
+//   #/  dashboard      #/topic/<id>  a topic (folder)      #/note/<id>  one note
+const hrefTopic = (id) => (id === HOME || !id ? '#/' : `#/topic/${encodeURIComponent(id)}`);
+const hrefNote = (id) => `#/note/${encodeURIComponent(id)}`;
+function go(hash) { if (location.hash === hash || (hash === '#/' && !location.hash)) route(); else location.hash = hash; }
+function route() {
+  const [, kind, raw] = location.hash.match(/^#\/(topic|note)\/(.+)$/) || [];
+  const id = raw && decodeURIComponent(raw);
+  query = ''; $('#search').value = ''; noteId = null;
+  if (kind === 'note' && find(id)) { noteId = id; current = find(id).t.id; }
+  else if (kind === 'topic' && topicOf(id)) enterTopic(id);
+  else current = HOME;
+  if (dlg.open) dlg.close();
+  render(); window.scrollTo({ top: 0 });
+}
+window.addEventListener('hashchange', route);
+
+const openTopic = (id) => go(hrefTopic(id));
+const openDetail = (id) => go(hrefNote(id));
+const crumbsFor = (t) => `<a href="#/">Dashboard</a>${[...ancestors(t), t].map((a) => ` <span>›</span> <a href="${hrefTopic(a.id)}">${esc(a.name)}</a>`).join('')}`;
+
+function enterTopic(id) {
+  current = id;
   const t = topicOf(id);
   if (t) {
     if (kids(t.id).length) { openFolders.add(t.id); saveOpen(); }
     const own = t.entries.length ? t.entries : notesIn(t).map((x) => x.e);
     cellKind = own.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
   }
-  render(); window.scrollTo({ top: 0 });
 }
 
 function card(e, t, showTopic = false) {
   const thumb = e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
     : e.image ? `<img src="${e.image}" alt="">` : `<span class="initial">${esc(e.title[0] || '?')}</span>`;
-  return `<button class="card" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
+  return `<a class="card" href="${hrefNote(e.id)}" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
     <div class="thumb">${thumb}</div>
     <div class="body"><h3>${esc(e.title)}</h3><p>${esc(e.definition)}</p>
-    ${showTopic ? `<div class="where">${esc(pathOf(t))}</div>` : ''}<div class="chips">${checkTag(e)}${chips(e.found)}</div></div></button>`;
+    ${showTopic ? `<div class="where">${esc(pathOf(t))}</div>` : ''}<div class="chips">${checkTag(e)}${chips(e.found)}</div></div></a>`;
 }
 
 function explorer() {
@@ -215,15 +234,14 @@ $('#topics').addEventListener('click', (ev) => {
     const wasOpen = tog.textContent.trim() === '▾';
     if (wasOpen) openFolders.delete(id); else openFolders.add(id);
     saveOpen();
-    if (wasOpen && current !== id && topicOf(current) && ancestors(topicOf(current)).some((a) => a.id === id)) current = id; // don't hide where you are
+    if (wasOpen && (noteId || current !== id) && topicOf(current) && [...ancestors(topicOf(current)), topicOf(current)].some((a) => a.id === id) && current !== id) return openTopic(id); // don't hide where you are
     return render();
   }
   openTopic(b.dataset.topic);
 });
 
 $('#main').addEventListener('click', (ev) => {
-  const c = ev.target.closest('[data-entry]');
-  if (c) { if (current === HOME && !query) shownIds = [...all()].reverse().slice(0, 6).map((x) => x.e.id); return openDetail(c.dataset.entry); }
+  if (ev.target.closest('a[href^="#"]')) return; // links to topics and notes just change the address
   const tp = ev.target.closest('[data-topic]');
   if (tp) return openTopic(tp.dataset.topic);
   const tab = ev.target.closest('[data-cell]');
@@ -234,6 +252,7 @@ $('#main').addEventListener('click', (ev) => {
   const t = topicOf(current);
   if (act === 'add') openEdit(null, { topic: current === HOME ? (all()[0]?.t.id || db.topics[0]?.id) : current });
   if (act === 'sub-topic') openTopicPicker(t.id);
+  if (act === 'edit-note') openEdit(noteId);
   if (act === 'move-topic') openMove(t);
   if (act === 'paste') openPaste();
   if (act === 'cards') openCards();
@@ -249,7 +268,7 @@ $('#main').addEventListener('click', (ev) => {
     const gone = [t, ...below(t.id)], n = notesIn(t).length;
     const what = [gone.length > 1 && plural(gone.length - 1, 'sub-topic'), plural(n, 'note')].filter(Boolean).join(' and ');
     if (confirm(`Delete “${t.name}” and the ${what} inside it?`)) {
-      db.topics = db.topics.filter((x) => !gone.includes(x)); current = t.parent || HOME; save(); render();
+      db.topics = db.topics.filter((x) => !gone.includes(x)); save(); openTopic(t.parent || HOME);
     }
   }
 });
@@ -325,21 +344,19 @@ function addPreset(p, parent = null) {
   toast(added ? `${p.name}: added ${added} note${added === 1 ? '' : 's'}` : `${p.name} already has all its notes`);
 }
 
-// ---------- one note, opened up ----------
-function openDetail(id) {
-  const hit = find(id);
-  if (!hit) return;
-  const { e, t } = hit;
+// ---------- one note, on its own page ----------
+function notePage() {
+  const { e, t } = find(noteId);
   const d = DIAGRAMS[e.diagram];
-  const i = shownIds.indexOf(id);
-  const prev = i > 0 ? find(shownIds[i - 1]) : null;
-  const next = i >= 0 && i < shownIds.length - 1 ? find(shownIds[i + 1]) : null;
+  const sib = t.entries, i = sib.indexOf(e);
+  const prev = sib[i - 1], next = sib[i + 1];
   const hasFig = d || e.image;
-  openDialog(`
-    <div class="detail" style="--c:${colorOf(e, t)}">
-      <div class="dlg-head"><div class="grow"><h2>${esc(e.title)}</h2><div class="chips">${checkTag(e)}${chips(e.found)}<span class="chip">${esc(t.name)}</span></div></div>
-        <button data-act="edit">Edit</button><button data-close aria-label="Close">✕</button></div>
-      <div class="dlg-body d-body ${hasFig ? '' : 'textonly'}">
+  return `<nav class="crumbs" aria-label="You are here">${crumbsFor(t)} <span>›</span> <b>${esc(e.title)}</b></nav>
+    <article class="note-page" style="--c:${colorOf(e, t)}">
+      <div class="bar"><h2>${esc(e.title)}</h2><div class="tools">
+        <a class="btn" href="${hrefTopic(t.id)}">← ${esc(t.name)}</a><button class="primary" data-act="edit-note">Edit</button></div></div>
+      <div class="chips">${checkTag(e)}${chips(e.found)}</div>
+      <div class="d-body ${hasFig ? '' : 'textonly'}">
         <div class="d-text">
           <p class="def">${esc(e.definition) || '<i>No definition yet – press Edit to add one.</i>'}</p>
           ${e.notes?.length ? `<h4>Key points</h4><ul>${e.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
@@ -351,21 +368,24 @@ function openDetail(id) {
           ${e.image ? `<figure class="myimg"><img src="${e.image}" alt="My diagram of ${esc(e.title)}"><figcaption>My own diagram</figcaption></figure>` : ''}
         </div>` : ''}
       </div>
-      <div class="dlg-foot">
-        <button data-go="${prev?.e.id || ''}" ${prev ? '' : 'disabled'}>← ${prev ? esc(prev.e.title) : 'Previous'}</button>
-        <span class="grow">${i >= 0 ? `${i + 1} of ${shownIds.length}` : ''}</span>
-        <button data-go="${next?.e.id || ''}" ${next ? '' : 'disabled'}>${next ? esc(next.e.title) : 'Next'} →</button>
+      <div class="note-nav">
+        ${prev ? `<a class="btn" data-go="prev" href="${hrefNote(prev.id)}">← ${esc(prev.title)}</a>` : '<span></span>'}
+        <span class="where">${i + 1} of ${sib.length} in ${esc(t.name)}</span>
+        ${next ? `<a class="btn" data-go="next" href="${hrefNote(next.id)}">${esc(next.title)} →</a>` : '<span></span>'}
       </div>
-    </div>`, 'detail-dlg');
+    </article>`;
+}
 
-  const svg = $('svg.dg', dlg);
+// Hovering a label highlights it on the diagram; "hide the labels" turns it into a quiz.
+function bindNote() {
+  const page = $('.note-page'), svg = $('svg.dg', page);
   const hl = (j) => {
     if (!svg) return;
     svg.classList.toggle('hl', j != null);
     $$('.lb', svg).forEach((g) => g.classList.toggle('on', g.dataset.i === String(j)));
-    $$('.legend li', dlg).forEach((li) => li.classList.toggle('hover', li.dataset.i === String(j)));
+    $$('.legend li', page).forEach((li) => li.classList.toggle('hover', li.dataset.i === String(j)));
   };
-  $$('.legend li', dlg).forEach((li) => {
+  $$('.legend li', page).forEach((li) => {
     li.addEventListener('mouseenter', () => hl(li.dataset.i));
     li.addEventListener('mouseleave', () => hl(null));
     li.addEventListener('click', () => {
@@ -377,18 +397,18 @@ function openDetail(id) {
     g.addEventListener('mouseenter', () => hl(g.dataset.i));
     g.addEventListener('mouseleave', () => hl(null));
   });
-  $('#hide-labels', dlg)?.addEventListener('change', (ev) => {
-    $('.detail', dlg).classList.toggle('quiz', ev.target.checked);
-    $$('.show', dlg).forEach((x) => x.classList.remove('show'));
+  $('#hide-labels', page)?.addEventListener('change', (ev) => {
+    page.classList.toggle('quiz', ev.target.checked);
+    $$('.show', page).forEach((x) => x.classList.remove('show'));
   });
-  $('[data-act=edit]', dlg).onclick = () => openEdit(e.id);
-  $$('[data-go]', dlg).forEach((b) => { b.onclick = () => b.dataset.go && openDetail(b.dataset.go); });
 }
 
+// On a note page: ← → for the previous / next note, Esc to go back to its topic.
 document.addEventListener('keydown', (ev) => {
-  if (!dlg.open || !dlg.classList.contains('detail-dlg') || ev.target.matches('input, textarea')) return;
-  if (ev.key === 'ArrowLeft') $$('[data-go]', dlg)[0]?.click();
-  if (ev.key === 'ArrowRight') $$('[data-go]', dlg)[1]?.click();
+  if (!noteId || dlg.open || query || ev.target.matches('input, textarea, select')) return;
+  if (ev.key === 'ArrowLeft') $('[data-go=prev]')?.click();
+  if (ev.key === 'ArrowRight') $('[data-go=next]')?.click();
+  if (ev.key === 'Escape') openTopic(find(noteId)?.t.id);
 });
 
 // ---------- add / edit a note ----------
@@ -450,7 +470,7 @@ function openEdit(id, preset = {}) {
   $('#img-rm').onclick = () => { image = ''; $('#img-show').innerHTML = ''; $('#img-rm').hidden = true; $('#img-in').value = ''; };
   if (hit) $('#del').onclick = () => {
     if (!confirm(`Delete “${e.title}”?`)) return;
-    hit.t.entries = hit.t.entries.filter((x) => x !== e); save(); dlg.close(); render();
+    hit.t.entries = hit.t.entries.filter((x) => x !== e); save(); openTopic(hit.t.id);
   };
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -472,8 +492,7 @@ function openEdit(id, preset = {}) {
       t.entries.push(entry);
     }
     if (!save()) return;
-    current = t.id; query = ''; $('#search').value = '';
-    render(); openDetail(entry.id);
+    openDetail(entry.id);
     toast('Saved');
   });
   setTimeout(() => (hit ? null : f.title.focus()), 50);
@@ -557,7 +576,7 @@ Ribosomes - where proteins are made</code>
         added++;
       }
     }
-    save(); current = t.id; query = ''; $('#search').value = ''; dlg.close(); render();
+    save(); openTopic(t.id);
     toast(`Added ${added} note${added === 1 ? '' : 's'}${updated ? `, updated ${updated}` : ''}`);
   };
   ta.focus();
@@ -638,13 +657,13 @@ $('#file-import').onchange = async (ev) => {
     const d = JSON.parse(await file.text());
     if (!Array.isArray(d.topics)) throw new Error('bad');
     if (!confirm('Replace all your current notes with this backup?')) return;
-    db = d; save(); current = HOME; render(); toast('Backup loaded');
+    db = d; save(); go('#/'); toast('Backup loaded');
   } catch { toast('That file is not a Bio Study Notes backup.'); }
   $('.more').open = false;
 };
 $('#btn-reset').onclick = () => {
   if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;
-  db = clone(STARTER); save(); current = HOME; render(); $('.more').open = false;
+  db = clone(STARTER); save(); go('#/'); $('.more').open = false;
 };
 document.addEventListener('click', (ev) => { const m = $('.more'); if (m.open && !m.contains(ev.target)) m.open = false; });
 
@@ -658,4 +677,4 @@ $('#btn-install').onclick = async () => {
 };
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
-render();
+route();
