@@ -1,6 +1,6 @@
 // Service worker: lets the installed app open with no internet.
 // Network first (so updates show straight away), saved copy when offline. Bump CACHE on each release.
-const CACHE = 'bio-study-v4';
+const CACHE = 'bio-study-v5';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'data.js', 'diagrams.js', 'presets.js', 'manifest.webmanifest',
   'icons/icon.svg', 'img/animal-cell.jpg', 'img/er.jpg', 'img/golgi.jpg', 'img/lysosome.jpg', 'img/mitochondria.jpg', 'img/ribosome.jpg', 'icons/icon-192.png', 'icons/icon-512.png'];
 

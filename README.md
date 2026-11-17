@@ -7,7 +7,8 @@ Live at **https://bio-study.adrian11jonker.workers.dev**
 
 ## What it does
 - Opens on a **Dashboard**: greeting, a clickable plant cell, totals, your topics and latest notes. The dark sidebar holds search, topics, Flashcards, Paste notes and Backup.
-- **Topics** of note cards. Click a card for the definition, key points and labelled diagram.
+- **Topics work like folders** (like chapters in Mathspace): a topic can hold sub-topics as well as notes. The sidebar is a tree (▸ opens a topic), each topic page has a breadcrumb trail, folder tiles for its sub-topics, and **+ Sub-topic** / **Move** buttons. Flashcards for a topic include its sub-topics.
+- Click a note card for the definition, key points and labelled diagram.
 - **+ New topic**: ready-made topics (Cell transport, Enzymes, Photosynthesis, Respiration, Cell division, DNA & genetics, Microscopy, Specialised cells), each with starter definitions, or a blank one.
 - **Cell explorer**: click part of an animal, plant or bacterial cell to open that organelle's notes.
 - **Hide the labels** on a diagram to test yourself, then click each label to reveal it.

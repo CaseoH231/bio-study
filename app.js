@@ -24,13 +24,25 @@ function save() {
 let db = load();
 if (upgradeStarter(db)) save();
 
-// When the starter notes change, swap them in for anyone who still has only the old, untouched starter topic.
-// Topics people added themselves (and presets) are kept.
+// When the starter notes change, update anyone who still has the old ones. Topics people added themselves are kept.
+//   starter 1 → the untouched "Cell organelles" topic is swapped for the notebook notes
+//   starter 2 → the three notebook topics move inside a "Headstart" topic
 function upgradeStarter(d) {
-  if ((d.starter || 1) >= STARTER.starter) return false;
-  const old = d.topics.find((t) => t.id === 't-organelles');
-  if (!old || old.entries.every((e) => e.id.startsWith('e-'))) {
-    d.topics = [...clone(STARTER).topics, ...d.topics.filter((t) => t.id !== 't-organelles')];
+  const from = d.starter || 1;
+  if (from >= STARTER.starter) return false;
+  const fresh = clone(STARTER).topics;
+  if (from < 2) {
+    const old = d.topics.find((t) => t.id === 't-organelles');
+    if (!old || old.entries.every((e) => e.id.startsWith('e-'))) {
+      d.topics = [...fresh, ...d.topics.filter((t) => t.id !== 't-organelles')];
+    }
+  }
+  if (!d.topics.some((t) => t.id === 't-headstart')) {
+    const mine = d.topics.filter((t) => ['t-plant', 't-shared', 't-animal'].includes(t.id));
+    if (mine.length) {
+      d.topics.unshift(fresh.find((t) => t.id === 't-headstart'));
+      mine.forEach((t) => { if (!t.parent) t.parent = 't-headstart'; });
+    }
   }
   d.starter = STARTER.starter;
   return true;
@@ -48,6 +60,19 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const topicOf = (id) => db.topics.find((t) => t.id === id);
 const all = () => db.topics.flatMap((t) => t.entries.map((e) => ({ e, t })));
+// Topics form a tree: each topic may have a `parent` (another topic's id). No parent = top level.
+const kids = (id = null) => db.topics.filter((t) => (t.parent || null) === id);
+const below = (id) => kids(id).flatMap((t) => [t, ...below(t.id)]); // every sub-topic, all the way down
+const notesIn = (t) => [t, ...below(t.id)].flatMap((x) => x.entries.map((e) => ({ e, t: x })));
+const ancestors = (t) => { const out = []; for (let x = topicOf(t.parent); x; x = topicOf(x.parent)) out.unshift(x); return out; };
+const pathOf = (t) => [...ancestors(t), t].map((x) => x.name).join(' › ');
+const treeOrder = (id = null, depth = 0) => kids(id).flatMap((t) => [{ t, depth }, ...treeOrder(t.id, depth + 1)]);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const OPEN_KEY = 'bio-study-open-folders';
+let openFolders = new Set();
+try { openFolders = new Set(JSON.parse(localStorage.getItem(OPEN_KEY)) || []); } catch { /* fine – all folders start closed */ }
+const saveOpen = () => { try { localStorage.setItem(OPEN_KEY, JSON.stringify([...openFolders])); } catch { /* only a convenience */ } };
+const FOLDER = '<svg class="fold" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2.2h8.4A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5Z"/></svg>';
 const find = (id) => all().find((x) => x.e.id === id);
 const colorOf = (e, t) => e.color || DIAGRAMS[e.diagram]?.color || t.color;
 const checkTag = (e) => (e.filled ? '<span class="chip warn" title="Not in your notebook yet – check it against your notes">Added for you – check it</span>' : '');
@@ -67,37 +92,61 @@ function openDialog(html, cls = '') {
 dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.close(); });
 
 // ---------- main screen ----------
+function navTree(id = null, depth = 0) {
+  const trail = current === HOME ? [] : [...ancestors(topicOf(current) || {}), topicOf(current)].filter(Boolean).map((t) => t.id);
+  return kids(id).map((t) => {
+    const ch = kids(t.id).length;
+    const open = ch && (openFolders.has(t.id) || trail.includes(t.id));
+    return `<div class="node"><button class="topic ${t.id === current && !query ? 'on' : ''}" data-topic="${t.id}" style="--c:${t.color};--d:${depth}">
+      <span class="tw" ${ch ? `data-toggle="${t.id}" title="${open ? 'Close' : 'Open'}"` : ''}>${ch ? (open ? '▾' : '▸') : ''}</span>
+      <span class="dot"></span><span class="nm">${esc(t.name)}</span><span class="n">${notesIn(t).length}</span></button>
+      ${open ? navTree(t.id, depth + 1) : ''}</div>`;
+  }).join('');
+}
+
 function render() {
   if (current !== HOME && !topicOf(current)) current = HOME;
   const notes = all();
-  $('#sub').textContent = `${notes.length} note${notes.length === 1 ? '' : 's'} · ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}`;
+  $('#sub').textContent = `${plural(notes.length, 'note')} · ${plural(db.topics.length, 'topic')}`;
   $('#topics').innerHTML = `<button class="topic home ${current === HOME && !query ? 'on' : ''}" data-topic="${HOME}"><span class="ico">⌂</span><span class="nm">Dashboard</span></button>
-    <div class="nav-label">Topics</div>` + db.topics.map((t) =>
-    `<button class="topic ${t.id === current && !query ? 'on' : ''}" data-topic="${t.id}" style="--c:${t.color}">
-      <span class="dot"></span><span class="nm">${esc(t.name)}</span><span class="n">${t.entries.length}</span></button>`).join('') +
-    '<button class="topic add" id="add-topic">+ New topic</button>';
+    <div class="nav-label">Topics</div>${navTree()}<button class="topic add" id="add-topic">+ New topic</button>`;
 
   const main = $('#main');
   if (query) {
     const q = query.toLowerCase();
     const hits = all().filter(({ e }) => [e.title, e.definition, e.found, ...(e.notes || [])].join(' ').toLowerCase().includes(q));
     shownIds = hits.map((h) => h.e.id);
-    main.innerHTML = `<div class="bar"><h2>Search</h2></div><p class="lead">${hits.length} note${hits.length === 1 ? '' : 's'} matching “${esc(query)}”</p>` +
+    main.innerHTML = `<div class="bar"><h2>Search</h2></div><p class="lead">${plural(hits.length, 'note')} matching “${esc(query)}”</p>` +
       (hits.length ? `<div class="grid">${hits.map(({ e, t }) => card(e, t, true)).join('')}</div>` : '<p class="empty">Nothing found.</p>');
     return;
   }
   if (current === HOME) { main.innerHTML = dashboard(); shownIds = []; return; }
   const t = topicOf(current);
+  const subs = kids(t.id);
   shownIds = t.entries.map((e) => e.id);
-  const hasCells = t.entries.some((e) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall', 'plasmodesmata'].includes(e.diagram));
+  const hasCells = notesIn(t).some(({ e }) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall', 'plasmodesmata'].includes(e.diagram));
+  const total = notesIn(t).length;
   main.innerHTML = `
+    <nav class="crumbs" aria-label="You are here"><button data-topic="${HOME}">Dashboard</button>${ancestors(t).map((a) =>
+      ` <span>›</span> <button data-topic="${a.id}">${esc(a.name)}</button>`).join('')} <span>›</span> <b>${esc(t.name)}</b></nav>
     <div class="bar" style="--c:${t.color}"><h2><span class="tdot"></span>${esc(t.name)}</h2><div class="tools">
-      <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Colour</button><button class="danger" data-act="delete-topic">Delete</button>
-      <button class="primary" data-act="add">+ Add note</button></div></div>
-    <p class="lead">${t.entries.length} note${t.entries.length === 1 ? '' : 's'} · click a card to open it</p>
+      <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Colour</button><button data-act="move-topic">Move</button>
+      <button class="danger" data-act="delete-topic">Delete</button>
+      <button data-act="sub-topic">+ Sub-topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
+    <p class="lead">${subs.length ? `${plural(subs.length, 'sub-topic')} · ` : ''}${plural(total, 'note')}${subs.length && t.entries.length ? ` (${t.entries.length} here)` : ''}</p>
+    ${subs.length ? `<h3 class="sect-h">Sub-topics</h3><div class="tgrid">${subs.map(folderCard).join('')}</div>` : ''}
     ${hasCells ? explorer() : ''}
-    ${t.entries.length ? `<div class="grid">${t.entries.map((e) => card(e, t)).join('')}</div>`
-      : `<div class="empty"><p>No notes in this topic yet.</p><button class="primary" data-act="add">+ Add a note</button><button data-act="paste">Paste notes</button></div>`}`;
+    ${t.entries.length ? `${subs.length ? '<h3 class="sect-h">Notes</h3>' : ''}<div class="grid">${t.entries.map((e) => card(e, t)).join('')}</div>`
+      : subs.length ? '' : `<div class="empty"><p>Nothing in this topic yet.</p><button class="primary" data-act="add">+ Add a note</button><button data-act="sub-topic">+ Sub-topic</button><button data-act="paste">Paste notes</button></div>`}`;
+}
+
+// A topic shown as a folder tile, like a chapter.
+function folderCard(t) {
+  const subs = kids(t.id), n = notesIn(t);
+  const inside = subs.length ? subs.map((x) => x.name) : t.entries.map((e) => e.title);
+  return `<button class="tcard" data-topic="${t.id}" style="--c:${t.color}">
+    <h3>${FOLDER}${esc(t.name)}</h3><span class="tn">${subs.length ? `${plural(subs.length, 'sub-topic')} · ` : ''}${plural(n.length, 'note')}</span>
+    <div class="chips">${inside.slice(0, 5).map((x) => `<span class="chip">${esc(x)}</span>`).join('')}${inside.length > 5 ? `<span class="chip">+${inside.length - 5} more</span>` : ''}</div></button>`;
 }
 
 const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
@@ -115,19 +164,21 @@ function dashboard() {
       <div class="hero-art">${cellSVG('plant')}<small>Click a part of the cell</small></div></section>
     <div class="stats">${stat(notes.length, 'notes')}${stat(db.topics.length, 'topics')}${stat(figs, 'with a diagram')}${stat(points, 'key points')}${stat(db.rounds || 0, 'flashcard rounds done')}</div>
     <h3 class="sect-h">Topics</h3>
-    ${db.topics.length ? `<div class="tgrid">${db.topics.map((t) => `<button class="tcard" data-topic="${t.id}" style="--c:${t.color}">
-      <h3>${esc(t.name)}</h3><span class="tn">${t.entries.length} note${t.entries.length === 1 ? '' : 's'}</span>
-      <div class="chips">${t.entries.slice(0, 5).map((e) => `<span class="chip">${esc(e.title)}</span>`).join('')}${t.entries.length > 5 ? `<span class="chip">+${t.entries.length - 5} more</span>` : ''}</div></button>`).join('')}
+    ${db.topics.length ? `<div class="tgrid">${kids().map(folderCard).join('')}
       <button class="tcard add" data-act="new-topic"><h3>+ New topic</h3><span class="tn">Ready-made or blank</span></button></div>`
     : '<div class="empty"><p>You have no topics yet.</p><button class="primary" data-act="new-topic">+ New topic</button></div>'}
     ${recent.length ? `<h3 class="sect-h">Latest notes</h3><div class="card-list"><ul class="list">${recent.map(({ e, t }) =>
-      `<li><button class="lrow" data-entry="${e.id}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(t.name)}</small></button></li>`).join('')}</ul></div>` : ''}`;
+      `<li><button class="lrow" data-entry="${e.id}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></button></li>`).join('')}</ul></div>` : ''}`;
 }
 
 function openTopic(id) {
   current = id; query = ''; $('#search').value = '';
   const t = topicOf(id);
-  if (t) cellKind = t.entries.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
+  if (t) {
+    if (kids(t.id).length) { openFolders.add(t.id); saveOpen(); }
+    const own = t.entries.length ? t.entries : notesIn(t).map((x) => x.e);
+    cellKind = own.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
+  }
   render(); window.scrollTo({ top: 0 });
 }
 
@@ -137,7 +188,7 @@ function card(e, t, showTopic = false) {
   return `<button class="card" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
     <div class="thumb">${thumb}</div>
     <div class="body"><h3>${esc(e.title)}</h3><p>${esc(e.definition)}</p>
-    ${showTopic ? `<div class="where">${esc(t.name)}</div>` : ''}<div class="chips">${checkTag(e)}${chips(e.found)}</div></div></button>`;
+    ${showTopic ? `<div class="where">${esc(pathOf(t))}</div>` : ''}<div class="chips">${checkTag(e)}${chips(e.found)}</div></div></button>`;
 }
 
 function explorer() {
@@ -147,7 +198,7 @@ function explorer() {
 }
 
 function openPart(key, name) {
-  const inTopic = topicOf(current)?.entries.find((e) => e.diagram === key);
+  const inTopic = topicOf(current) && notesIn(topicOf(current)).find((x) => x.e.diagram === key)?.e;
   const hit = inTopic || all().find((x) => x.e.diagram === key)?.e;
   if (hit) return openDetail(hit.id);
   toast(`No notes for “${name}” yet – add some!`);
@@ -158,8 +209,16 @@ $('#topics').addEventListener('click', (ev) => {
   const b = ev.target.closest('button');
   if (!b) return;
   if (b.id === 'add-topic') return openTopicPicker();
-  openTopic(b.dataset.topic); return;
-  render(); window.scrollTo({ top: 0 });
+  const tog = ev.target.closest('[data-toggle]');
+  if (tog) {
+    const id = tog.dataset.toggle;
+    const wasOpen = tog.textContent.trim() === '▾';
+    if (wasOpen) openFolders.delete(id); else openFolders.add(id);
+    saveOpen();
+    if (wasOpen && current !== id && topicOf(current) && ancestors(topicOf(current)).some((a) => a.id === id)) current = id; // don't hide where you are
+    return render();
+  }
+  openTopic(b.dataset.topic);
 });
 
 $('#main').addEventListener('click', (ev) => {
@@ -173,7 +232,9 @@ $('#main').addEventListener('click', (ev) => {
   if (p) return openPart(p.dataset.k, $('title', p).textContent);
   const act = ev.target.closest('[data-act]')?.dataset.act;
   const t = topicOf(current);
-  if (act === 'add') openEdit(null, { topic: current === HOME ? db.topics[0]?.id : current });
+  if (act === 'add') openEdit(null, { topic: current === HOME ? (all()[0]?.t.id || db.topics[0]?.id) : current });
+  if (act === 'sub-topic') openTopicPicker(t.id);
+  if (act === 'move-topic') openMove(t);
   if (act === 'paste') openPaste();
   if (act === 'cards') openCards();
   if (act === 'new-topic') openTopicPicker();
@@ -184,8 +245,12 @@ $('#main').addEventListener('click', (ev) => {
   if (act === 'colour-topic') {
     t.color = PALETTE[(PALETTE.indexOf(t.color) + 1) % PALETTE.length]; save(); render();
   }
-  if (act === 'delete-topic' && confirm(`Delete the topic “${t.name}” and all ${t.entries.length} notes in it?`)) {
-    db.topics = db.topics.filter((x) => x !== t); save(); render();
+  if (act === 'delete-topic') {
+    const gone = [t, ...below(t.id)], n = notesIn(t).length;
+    const what = [gone.length > 1 && plural(gone.length - 1, 'sub-topic'), plural(n, 'note')].filter(Boolean).join(' and ');
+    if (confirm(`Delete “${t.name}” and the ${what} inside it?`)) {
+      db.topics = db.topics.filter((x) => !gone.includes(x)); current = t.parent || HOME; save(); render();
+    }
   }
 });
 $('#main').addEventListener('keydown', (ev) => {
@@ -199,19 +264,37 @@ $('#main').addEventListener('mouseover', (ev) => {
   tip.textContent = p ? `${$('title', p).textContent} – click to open` : tip.closest('.hero-art') ? 'Click a part of the cell' : ' ';
 });
 
-function newTopic(name) {
-  const n = name;
-  if (!n || !n.trim()) return null;
-  const t = { id: uid(), name: n.trim(), color: PALETTE[db.topics.length % PALETTE.length], entries: [] };
+function newTopic(name, parent = null) {
+  if (!name || !name.trim()) return null;
+  const t = { id: uid(), name: name.trim(), color: PALETTE[db.topics.length % PALETTE.length], entries: [] };
+  if (parent) t.parent = parent;
   db.topics.push(t); save();
   return t;
 }
 
-// Pick a ready-made topic (with starter notes) or make a blank one.
-function openTopicPicker() {
-  const has = (name) => db.topics.find((t) => t.name.toLowerCase() === name.toLowerCase());
+// Move a topic (and everything inside it) into another topic, or to the top level.
+function openMove(t) {
+  const banned = new Set([t.id, ...below(t.id).map((x) => x.id)]);
+  const opts = treeOrder().filter(({ t: x }) => !banned.has(x.id));
   openDialog(`
-    <div class="dlg-head"><h2 class="grow">Add a topic</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-head"><h2 class="grow">Move “${esc(t.name)}”</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body form"><label>Put it inside <select id="move-to"><option value="">Top level (no parent)</option>
+      ${opts.map(({ t: x, depth }) => `<option value="${x.id}" ${x.id === t.parent ? 'selected' : ''}>${'&nbsp;&nbsp;&nbsp;'.repeat(depth)}${esc(x.name)}</option>`).join('')}</select></label>
+      <p class="where">Its sub-topics and notes move with it.</p></div>
+    <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="move-go">Move</button></div>`, 'small');
+  $('#move-go').onclick = () => {
+    const to = $('#move-to').value;
+    if (to) { t.parent = to; openFolders.add(to); saveOpen(); } else delete t.parent;
+    save(); dlg.close(); render();
+  };
+}
+
+// Pick a ready-made topic (with starter notes) or make a blank one.
+function openTopicPicker(parent = null) {
+  const has = (name) => kids(parent).find((t) => t.name.toLowerCase() === name.toLowerCase());
+  const into = topicOf(parent);
+  openDialog(`
+    <div class="dlg-head"><h2 class="grow">${into ? `Add a sub-topic to “${esc(into.name)}”` : 'Add a topic'}</h2><button data-close aria-label="Close">✕</button></div>
     <div class="dlg-body">
       <h4 class="sect">Ready-made topics <small>– each comes with starter definitions you can edit</small></h4>
       <div class="presets">${PRESETS.map((p, i) => `<button class="preset" data-p="${i}" style="--c:${p.color}">
@@ -220,25 +303,25 @@ function openTopicPicker() {
       <h4 class="sect">Or start a blank topic</h4>
       <form id="blank-topic" class="blank-row"><input type="text" name="name" required placeholder="e.g. Ecology"><button class="primary">Create</button></form>
     </div>`, 'small');
-  $$('.preset', dlg).forEach((b) => { b.onclick = () => addPreset(PRESETS[b.dataset.p]); });
+  $$('.preset', dlg).forEach((b) => { b.onclick = () => addPreset(PRESETS[b.dataset.p], parent); });
   $('#blank-topic').onsubmit = (ev) => {
     ev.preventDefault();
-    const t = newTopic(ev.target.name.value);
+    const t = newTopic(ev.target.name.value, parent);
     if (!t) return;
-    current = t.id; query = ''; $('#search').value = ''; dlg.close(); render();
+    dlg.close(); openTopic(t.id);
   };
 }
 
-function addPreset(p) {
-  let t = db.topics.find((x) => x.name.toLowerCase() === p.name.toLowerCase());
-  if (!t) { t = { id: uid(), name: p.name, color: p.color, entries: [] }; db.topics.push(t); }
+function addPreset(p, parent = null) {
+  let t = kids(parent).find((x) => x.name.toLowerCase() === p.name.toLowerCase());
+  if (!t) { t = { id: uid(), name: p.name, color: p.color, entries: [] }; if (parent) t.parent = parent; db.topics.push(t); }
   let added = 0;
   for (const e of p.entries) {
     if (t.entries.some((x) => x.title.toLowerCase() === e.title.toLowerCase())) continue;
     t.entries.push({ id: uid(), ...e, notes: [...e.notes], diagram: '', image: '' });
     added++;
   }
-  save(); current = t.id; query = ''; $('#search').value = ''; dlg.close(); render();
+  save(); dlg.close(); openTopic(t.id);
   toast(added ? `${p.name}: added ${added} note${added === 1 ? '' : 's'}` : `${p.name} already has all its notes`);
 }
 
@@ -310,7 +393,7 @@ document.addEventListener('keydown', (ev) => {
 
 // ---------- add / edit a note ----------
 function topicOptions(selected) {
-  return db.topics.map((t) => `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)}</option>`).join('') +
+  return treeOrder().map(({ t, depth }) => `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${'&nbsp;&nbsp;&nbsp;'.repeat(depth)}${esc(t.name)}</option>`).join('') +
     '<option value="__new">+ New topic…</option>';
 }
 
@@ -487,7 +570,7 @@ function openCards() {
   openDialog(`
     <div class="dlg-head"><h2 class="grow">Flashcards</h2><button data-close aria-label="Close">✕</button></div>
     <div class="dlg-body form">
-      <label>Topic <select id="fc-topic"><option value="">All topics</option>${db.topics.map((t) => `<option value="${t.id}" ${t.id === current ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+      <label>Topic <small>– includes its sub-topics</small><select id="fc-topic"><option value="">All topics</option>${treeOrder().map(({ t, depth }) => `<option value="${t.id}" ${t.id === current ? 'selected' : ''}>${'&nbsp;&nbsp;&nbsp;'.repeat(depth)}${esc(t.name)}</option>`).join('')}</select></label>
       <label>Mode <select id="fc-mode">
         <option value="def">Read the definition → name it</option>
         <option value="name">Read the name → say the definition</option>
@@ -496,7 +579,8 @@ function openCards() {
     <div class="dlg-foot"><span class="grow"></span><button class="primary" id="fc-start">Start</button></div>`, 'small');
   $('#fc-start').onclick = () => {
     const tid = $('#fc-topic').value, mode = $('#fc-mode').value;
-    let deck = all().filter(({ e, t }) => (!tid || t.id === tid) && (mode === 'diagram' ? DIAGRAMS[e.diagram] || e.image : e.definition));
+    const pool = tid ? notesIn(topicOf(tid)) : all();
+    let deck = pool.filter(({ e }) => (mode === 'diagram' ? DIAGRAMS[e.diagram] || e.image : e.definition));
     if (!deck.length) return toast(mode === 'diagram' ? 'No notes with diagrams in that topic.' : 'No notes with definitions in that topic.');
     deck = deck.map((x) => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
     runCards(deck, mode);

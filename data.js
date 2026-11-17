@@ -1,11 +1,13 @@
 // The notes a brand-new copy of the app starts with – taken from the notebook pages (photos of the drawings are in img/).
 // `filled: true` marks a definition that wasn't in the notebook yet; the app shows it as "Added for you – check it".
-// Bump `starter` when these change: copies still holding only the old starter notes get the new ones (see app.js).
+// Topics can sit inside other topics: `parent` is the id of the topic they're in.
+// Bump `starter` when these change and add a step to upgradeStarter() in app.js.
 export const STARTER = {
   version: 1,
-  starter: 2,
+  starter: 3,
   topics: [
-    { id: 't-plant', name: 'Plant-only organelles', color: '#16a34a', entries: [
+    { id: 't-headstart', name: 'Headstart', color: '#7c3aed', entries: [] },
+    { id: 't-plant', parent: 't-headstart', name: 'Plant-only organelles', color: '#16a34a', entries: [
       { id: 'e-plantcell', title: 'Plant cell', diagram: 'plantcell', found: 'Plant', filled: true,
         definition: 'A eukaryotic cell with a cell wall, chloroplasts and a large central vacuole, as well as all the shared organelles.',
         notes: [] },
@@ -22,7 +24,7 @@ export const STARTER = {
         definition: 'Microscopic channels through the cell wall.',
         notes: ['Microscopic channels through the cell wall'] },
     ] },
-    { id: 't-shared', name: 'Shared eukaryotic organelles', color: '#2563eb', entries: [
+    { id: 't-shared', parent: 't-headstart', name: 'Shared eukaryotic organelles', color: '#2563eb', entries: [
       { id: 'e-nucleus', title: 'Nucleus', diagram: 'nucleus', found: 'Plant, Animal', filled: true,
         definition: 'Contains the cell’s DNA and controls the cell’s activities.',
         notes: ['Parts (from my diagram): nuclear envelope, nuclear pore, nucleolus, nucleoplasm'] },
@@ -50,7 +52,7 @@ export const STARTER = {
         definition: 'A network of protein fibres that supports the cell, keeps its shape and moves things around inside it.',
         notes: [] },
     ] },
-    { id: 't-animal', name: 'Animal cells', color: '#be123c', entries: [
+    { id: 't-animal', parent: 't-headstart', name: 'Animal cells', color: '#be123c', entries: [
       { id: 'e-animalcell', title: 'Animal cell', diagram: 'animalcell', image: 'img/animal-cell.jpg', found: 'Animal', filled: true,
         definition: 'A eukaryotic cell with a nucleus but no cell wall, chloroplasts or large central vacuole.',
         notes: ['Parts (from my diagram): cell membrane, cytoplasm, nucleus, rough & smooth ER, ribosomes, Golgi body, secretory vesicles, mitochondrion, lysosome, peroxisome, centrosome & centrioles, cilium'] },

@@ -242,3 +242,20 @@ svg.dg.hl .lb.on { opacity: 1; }
 svg.cell { max-height: 330px; }
 
 .chip.warn { background: #fef3c7; color: #92400e; }
+
+/* topics as folders */
+.node { display: contents; }
+.topic { padding-left: calc(6px + var(--d, 0) * 16px); }
+.topic .tw { width: 16px; flex: none; text-align: center; font-size: 12px; opacity: .8; border-radius: 4px; }
+.topic .tw[data-toggle]:hover { background: rgb(255 255 255 / .15); opacity: 1; }
+.topic .dot { margin: 0 2px; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.crumbs button { border: none; background: none; padding: 2px 4px; font-weight: 500; color: var(--muted); }
+.crumbs button:hover { color: var(--ink); text-decoration: underline; }
+.crumbs b { color: var(--ink); font-weight: 600; }
+.tcard h3 { display: flex; align-items: center; gap: 8px; }
+.fold { width: 22px; height: 22px; flex: none; fill: var(--c, var(--muted)); opacity: .9; }
+@media (max-width: 800px) {
+  .topic { padding-left: 12px; }
+  .topic .tw { display: none; }
+}
