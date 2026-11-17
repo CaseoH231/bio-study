@@ -33,7 +33,8 @@ Without GitHub, `tools/build_bio_worker.py` packs the app into one Worker script
 index.html            page layout (sidebar + main area)
 style.css             all the styling (Coop Ledger-style layout)
 app.js                everything the app does: topics, cards, dialogs, paste, flashcards, saving
-data.js               the starter organelle notes
+data.js               the notes from my notebook (the starting notes)
+img/                  photos of my hand-drawn diagrams
 presets.js            the ready-made topics
 diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline

@@ -22,6 +22,19 @@ function save() {
 }
 
 let db = load();
+if (upgradeStarter(db)) save();
+
+// When the starter notes change, swap them in for anyone who still has only the old, untouched starter topic.
+// Topics people added themselves (and presets) are kept.
+function upgradeStarter(d) {
+  if ((d.starter || 1) >= STARTER.starter) return false;
+  const old = d.topics.find((t) => t.id === 't-organelles');
+  if (!old || old.entries.every((e) => e.id.startsWith('e-'))) {
+    d.topics = [...clone(STARTER).topics, ...d.topics.filter((t) => t.id !== 't-organelles')];
+  }
+  d.starter = STARTER.starter;
+  return true;
+}
 const HOME = '__home';
 let current = HOME;
 let query = '';
@@ -37,6 +50,7 @@ const topicOf = (id) => db.topics.find((t) => t.id === id);
 const all = () => db.topics.flatMap((t) => t.entries.map((e) => ({ e, t })));
 const find = (id) => all().find((x) => x.e.id === id);
 const colorOf = (e, t) => e.color || DIAGRAMS[e.diagram]?.color || t.color;
+const checkTag = (e) => (e.filled ? '<span class="chip warn" title="Not in your notebook yet – check it against your notes">Added for you – check it</span>' : '');
 const chips = (found) => (found || '').split(',').map((s) => s.trim()).filter(Boolean).map((s) => `<span class="chip">${esc(s)}</span>`).join('');
 const dlg = $('#dlg');
 
@@ -75,7 +89,7 @@ function render() {
   if (current === HOME) { main.innerHTML = dashboard(); shownIds = []; return; }
   const t = topicOf(current);
   shownIds = t.entries.map((e) => e.id);
-  const hasCells = t.entries.some((e) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall'].includes(e.diagram));
+  const hasCells = t.entries.some((e) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall', 'plasmodesmata'].includes(e.diagram));
   main.innerHTML = `
     <div class="bar" style="--c:${t.color}"><h2><span class="tdot"></span>${esc(t.name)}</h2><div class="tools">
       <button data-act="rename-topic">Rename</button><button data-act="colour-topic">Colour</button><button class="danger" data-act="delete-topic">Delete</button>
@@ -110,13 +124,20 @@ function dashboard() {
       `<li><button class="lrow" data-entry="${e.id}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(t.name)}</small></button></li>`).join('')}</ul></div>` : ''}`;
 }
 
+function openTopic(id) {
+  current = id; query = ''; $('#search').value = '';
+  const t = topicOf(id);
+  if (t) cellKind = t.entries.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
+  render(); window.scrollTo({ top: 0 });
+}
+
 function card(e, t, showTopic = false) {
   const thumb = e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
     : e.image ? `<img src="${e.image}" alt="">` : `<span class="initial">${esc(e.title[0] || '?')}</span>`;
   return `<button class="card" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
     <div class="thumb">${thumb}</div>
     <div class="body"><h3>${esc(e.title)}</h3><p>${esc(e.definition)}</p>
-    ${showTopic ? `<div class="where">${esc(t.name)}</div>` : ''}<div class="chips">${chips(e.found)}</div></div></button>`;
+    ${showTopic ? `<div class="where">${esc(t.name)}</div>` : ''}<div class="chips">${checkTag(e)}${chips(e.found)}</div></div></button>`;
 }
 
 function explorer() {
@@ -137,7 +158,7 @@ $('#topics').addEventListener('click', (ev) => {
   const b = ev.target.closest('button');
   if (!b) return;
   if (b.id === 'add-topic') return openTopicPicker();
-  current = b.dataset.topic; query = ''; $('#search').value = '';
+  openTopic(b.dataset.topic); return;
   render(); window.scrollTo({ top: 0 });
 });
 
@@ -145,7 +166,7 @@ $('#main').addEventListener('click', (ev) => {
   const c = ev.target.closest('[data-entry]');
   if (c) { if (current === HOME && !query) shownIds = [...all()].reverse().slice(0, 6).map((x) => x.e.id); return openDetail(c.dataset.entry); }
   const tp = ev.target.closest('[data-topic]');
-  if (tp) { current = tp.dataset.topic; render(); return window.scrollTo({ top: 0 }); }
+  if (tp) return openTopic(tp.dataset.topic);
   const tab = ev.target.closest('[data-cell]');
   if (tab) { cellKind = tab.dataset.cell; return render(); }
   const p = ev.target.closest('.part');
@@ -233,7 +254,7 @@ function openDetail(id) {
   const hasFig = d || e.image;
   openDialog(`
     <div class="detail" style="--c:${colorOf(e, t)}">
-      <div class="dlg-head"><div class="grow"><h2>${esc(e.title)}</h2><div class="chips">${chips(e.found)}<span class="chip">${esc(t.name)}</span></div></div>
+      <div class="dlg-head"><div class="grow"><h2>${esc(e.title)}</h2><div class="chips">${checkTag(e)}${chips(e.found)}<span class="chip">${esc(t.name)}</span></div></div>
         <button data-act="edit">Edit</button><button data-close aria-label="Close">✕</button></div>
       <div class="dlg-body d-body ${hasFig ? '' : 'textonly'}">
         <div class="d-text">
@@ -361,6 +382,7 @@ function openEdit(id, preset = {}) {
     let entry = e;
     if (hit) {
       Object.assign(e, data);
+      delete e.filled; // once you've edited it, it's yours
       if (hit.t !== t) { hit.t.entries = hit.t.entries.filter((x) => x !== e); t.entries.push(e); }
     } else {
       entry = { id: uid(), ...data };
@@ -537,7 +559,7 @@ $('#file-import').onchange = async (ev) => {
   $('.more').open = false;
 };
 $('#btn-reset').onclick = () => {
-  if (!confirm('Throw away all your notes and go back to the starter organelle notes?')) return;
+  if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;
   db = clone(STARTER); save(); current = HOME; render(); $('.more').open = false;
 };
 document.addEventListener('click', (ev) => { const m = $('.more'); if (m.open && !m.contains(ev.target)) m.open = false; });

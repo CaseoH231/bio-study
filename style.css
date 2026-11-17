@@ -240,3 +240,5 @@ svg.dg.hl .lb.on { opacity: 1; }
 #toast:empty { display: none; }
 .card { font-weight: 400; }
 svg.cell { max-height: 330px; }
+
+.chip.warn { background: #fef3c7; color: #92400e; }

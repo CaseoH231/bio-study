@@ -34,7 +34,9 @@ const mitoArt = () => {
   return `<ellipse cx="320" cy="180" rx="165" ry="88" fill="#fdba74" stroke="#9a3412" stroke-width="5"/>
   <ellipse cx="320" cy="180" rx="150" ry="74" fill="#ffedd5" stroke="#c2410c" stroke-width="4"/>${cristae}
   <circle cx="255" cy="180" r="10" fill="none" stroke="#db2777" stroke-width="3"/>
-  <circle cx="345" cy="176" r="3.5" fill="#6d28d9"/><circle cx="420" cy="184" r="3.5" fill="#6d28d9"/><circle cx="300" cy="186" r="3.5" fill="#6d28d9"/>`;
+  <circle cx="458" cy="182" r="4" fill="#6d28d9"/><circle cx="372" cy="186" r="4" fill="#6d28d9"/><circle cx="300" cy="186" r="4" fill="#6d28d9"/>
+  <g stroke="#16a34a" stroke-width="3"><line x1="406" y1="215" x2="413" y2="215"/><line x1="394" y1="228" x2="387" y2="228"/><line x1="246" y1="214" x2="253" y2="214"/></g>
+  <g fill="#16a34a"><circle cx="417" cy="215" r="4.5"/><circle cx="383" cy="228" r="4.5"/><circle cx="257" cy="214" r="4.5"/></g>`;
 };
 
 const chloroArt = () => {
@@ -50,6 +52,10 @@ const chloroArt = () => {
 
 const riboArt = () => `<ellipse cx="320" cy="145" rx="115" ry="72" fill="#a78bfa" stroke="#5b21b6" stroke-width="4"/>
   <ellipse cx="320" cy="250" rx="95" ry="40" fill="#ddd6fe" stroke="#6d28d9" stroke-width="4"/>
+  <line x1="340" y1="153" x2="330" y2="76" stroke="#b45309" stroke-width="3"/>
+  <rect x="290" y="168" width="24" height="46" rx="10" fill="#fbbf24" stroke="#b45309" stroke-width="2.5"/>
+  <rect x="328" y="168" width="24" height="46" rx="10" fill="#fbbf24" stroke="#b45309" stroke-width="2.5"/>
+  <circle cx="302" cy="159" r="8" fill="#10b981" stroke="#fff" stroke-width="1.5"/><circle cx="340" cy="159" r="8" fill="#ef4444" stroke="#fff" stroke-width="1.5"/>
   <path d="M110 215 q20 -10 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t20 0" fill="none" stroke="#db2777" stroke-width="5"/>
   ${[[330, 68, '#f59e0b'], [345, 55, '#10b981'], [362, 47, '#3b82f6'], [380, 43, '#ef4444'], [398, 46, '#f59e0b'], [414, 38, '#10b981'], [430, 30, '#3b82f6']]
     .map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="8" fill="${c}" stroke="#fff" stroke-width="1.5"/>`).join('')}
@@ -107,8 +113,9 @@ const golgiArt = () => {
     const d = `M ${225 + i * 6} ${105 + i * 32} Q 320 ${150 + i * 32} ${415 - i * 6} ${105 + i * 32}`;
     sacs += `<path d="${d}" fill="none" stroke="#d97706" stroke-width="22" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fde68a" stroke-width="11" stroke-linecap="round"/>`;
   });
-  const ves = [[450, 100], [470, 140], [445, 245], [480, 272], [200, 272], [182, 240], [168, 300]];
-  return sacs + ves.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="#fde68a" stroke="#d97706" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3" fill="#7c3aed"/>`).join('');
+  const v = (x, y, f, c) => `<circle cx="${x}" cy="${y}" r="11" fill="${f}" stroke="${c}" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3" fill="#7c3aed"/>`;
+  return [[275, 58], [370, 48]].map(([x, y]) => v(x, y, '#99f6e4', '#0f766e')).join('') + sacs +
+    v(398, 247, '#fde68a', '#d97706') + [[455, 300], [395, 322], [205, 292]].map(([x, y]) => v(x, y, '#fecdd3', '#be123c')).join('');
 };
 
 const lysoArt = () => {
@@ -116,7 +123,8 @@ const lysoArt = () => {
   return `<circle cx="320" cy="180" r="110" fill="#fecdd3" stroke="#be123c" stroke-width="6"/>
   <ellipse cx="305" cy="195" rx="44" ry="24" fill="#fed7aa" stroke="#9a3412" stroke-width="3" stroke-dasharray="7 5"/>
   <path d="M280 192 l14 -8 l12 10 l14 -9" fill="none" stroke="#9a3412" stroke-width="3"/>
-  ${enz.map(([x, y]) => `<path d="M${x} ${y} L${x + 8} ${y - 5} A9 9 0 1 0 ${x + 8} ${y + 5} Z" fill="#e11d48"/>`).join('')}`;
+  ${enz.map(([x, y]) => `<path d="M${x} ${y} L${x + 8} ${y - 5} A9 9 0 1 0 ${x + 8} ${y + 5} Z" fill="#e11d48"/>`).join('')}
+  ${[40, 160, 250].map((a) => `<rect x="-7" y="-121" width="14" height="22" rx="4" fill="#34d399" stroke="#047857" stroke-width="2" transform="translate(320 180) rotate(${a})"/>`).join('')}`;
 };
 
 const bacteriumArt = () => `<rect x="130" y="90" width="380" height="180" rx="90" fill="#fde68a" stroke="#92400e" stroke-width="5"/>
@@ -125,6 +133,38 @@ const bacteriumArt = () => `<rect x="130" y="90" width="380" height="180" rx="90
   ${[[444, 140], [452, 218], [200, 220]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#7c3aed" stroke-width="4.5"/>`).join('')}
   ${[[200, 170], [230, 130], [300, 240], [410, 120], [420, 245], [180, 200], [330, 120]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="#6d28d9"/>`).join('')}
   <path d="M510 180 c 25 -30 45 30 70 0 s 40 30 55 0" fill="none" stroke="#92400e" stroke-width="4"/>`;
+
+const plasmoArt = () => `<rect x="140" y="40" width="360" height="280" rx="18" fill="#a3e635" stroke="#4d7c0f" stroke-width="3"/>
+  ${[306, 320, 334].map((x) => `<line x1="${x}" y1="44" x2="${x}" y2="316" stroke="#4d7c0f" stroke-width="1.5" stroke-dasharray="12 6"/>`).join('')}
+  <rect x="156" y="56" width="140" height="248" rx="10" fill="#fef9c3" stroke="#2563eb" stroke-width="3"/>
+  <rect x="344" y="56" width="140" height="248" rx="10" fill="#fef9c3" stroke="#2563eb" stroke-width="3"/>
+  ${[100, 180, 260].map((y) => `<rect x="293" y="${y - 9}" width="54" height="18" fill="#fef9c3"/>
+    <line x1="293" y1="${y - 9}" x2="347" y2="${y - 9}" stroke="#2563eb" stroke-width="3"/><line x1="293" y1="${y + 9}" x2="347" y2="${y + 9}" stroke="#2563eb" stroke-width="3"/>
+    <line x1="288" y1="${y}" x2="352" y2="${y}" stroke="#db2777" stroke-width="4" stroke-linecap="round"/>`).join('')}
+  ${[[272, 248], [318, 252], [366, 266], [250, 120], [392, 170]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.5" fill="#7c3aed"/>`).join('')}
+  <text x="226" y="290" class="note" text-anchor="middle">Cell 1</text><text x="414" y="290" class="note" text-anchor="middle">Cell 2</text>`;
+
+const peroxiArt = () => {
+  let grid = '';
+  for (let i = 1; i < 4; i++) grid += `<line x1="${280 + i * 20}" y1="135" x2="${280 + i * 20}" y2="205"/><line x1="280" y1="${135 + i * 17.5}" x2="360" y2="${135 + i * 17.5}"/>`;
+  return `<circle cx="320" cy="180" r="110" fill="#dcfce7" stroke="#15803d" stroke-width="5"/>
+  <g transform="rotate(-15 320 170)"><rect x="280" y="135" width="80" height="70" rx="6" fill="#86efac" stroke="#166534" stroke-width="2.5"/><g stroke="#166534" stroke-width="1.2">${grid}</g></g>
+  ${[[250, 230], [390, 240], [240, 140], [400, 130], [330, 262], [250, 190], [398, 190], [300, 110]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" fill="#d97706" stroke="#92400e" stroke-width="1.5"/>`).join('')}`;
+};
+
+const cytoskelArt = () => {
+  const tubes = [[215, 95], [465, 125], [485, 200], [425, 290], [300, 305], [180, 240], [275, 70]];
+  return `<path d="${BLOB}" fill="#fff7ed" stroke="#2563eb" stroke-width="5"/>
+  <g stroke="#16a34a" stroke-width="4.5" stroke-linecap="round">${tubes.map(([x, y]) => `<line x1="360" y1="130" x2="${x}" y2="${y}"/>`).join('')}</g>
+  <g fill="none" stroke="#dc2626" stroke-width="2.2"><path d="M200 105 L230 85 L260 100 L290 75 L320 90 L350 70 L380 90 L410 75 L440 100"/>
+    <path d="M190 260 L220 285 L250 270 L280 300 L310 285 L340 305 L370 285 L400 300"/></g>
+  <g fill="none" stroke="#7c3aed" stroke-width="3"><path d="M175 180 q20 -20 40 0 t40 0"/><path d="M380 230 q20 -20 40 0 t40 0"/></g>
+  <circle cx="300" cy="185" r="40" fill="#bfdbfe" stroke="#1e40af" stroke-width="3"/>
+  <rect x="350" y="124" width="16" height="7" fill="#a16207"/><rect x="359" y="122" width="7" height="16" fill="#ca8a04"/>`;
+};
+
+// Whole cells for the notes, drawn from the cell explorer but not clickable.
+const still = (svg) => svg.replaceAll('class="part"', 'class="pt"').replaceAll(' tabindex="0"', '');
 
 export const DIAGRAMS = {
   nucleus: { name: 'Nucleus', color: '#1e40af', art: nucleusArt, labels: [
@@ -135,10 +175,12 @@ export const DIAGRAMS = {
     ['Nucleoplasm', '#2563eb', 270, 260, 165, 280, 'Jelly-like fluid inside the nucleus'] ] },
   mitochondria: { name: 'Mitochondrion', color: '#c2410c', art: mitoArt, labels: [
     ['Outer membrane', '#9a3412', 190, 126, 165, 60, 'Smooth outer layer'],
-    ['Inner membrane', '#c2410c', 180, 207, 165, 270, 'Folded membrane where most respiration reactions happen'],
-    ['Cristae', '#b45309', 360, 140, 475, 70, 'Folds of the inner membrane – give a large surface area'],
-    ['Matrix', '#ea580c', 300, 180, 515, 200, 'Fluid inside – contains enzymes for respiration'],
-    ['Own DNA (loop)', '#db2777', 250, 180, 165, 175, 'Mitochondria have their own small loop of DNA'] ] },
+    ['DNA (loop)', '#db2777', 250, 180, 165, 170, 'Their own DNA – so they can make their own proteins and replicate'],
+    ['Inner membrane', '#c2410c', 180, 207, 165, 270, 'Folded inner layer where ATP is made'],
+    ['Cristae', '#b45309', 360, 140, 475, 50, 'The “jiggly wiggly” folds of the inner membrane – a big surface area'],
+    ['Ribosome', '#6d28d9', 458, 182, 515, 135, 'Makes the mitochondrion’s own proteins'],
+    ['Matrix', '#ea580c', 338, 195, 515, 200, 'Fluid inside – where the Krebs cycle happens'],
+    ['ATP synthase', '#16a34a', 417, 215, 515, 265, 'Enzyme on the cristae that makes ATP (oxidative phosphorylation)'] ] },
   chloroplast: { name: 'Chloroplast', color: '#15803d', art: chloroArt, labels: [
     ['Double membrane', '#14532d', 320, 85, 475, 40, 'Outer and inner membrane'],
     ['Granum', '#15803d', 300, 118, 165, 60, 'A stack of thylakoids'],
@@ -147,10 +189,11 @@ export const DIAGRAMS = {
     ['Lamella', '#15803d', 360, 157, 520, 125, 'Links one granum to another'],
     ['Starch grain', '#a16207', 385, 240, 505, 285, 'Stored starch made from glucose'] ] },
   ribosome: { name: 'Ribosome', color: '#6d28d9', art: riboArt, labels: [
-    ['Large subunit', '#5b21b6', 260, 130, 165, 110, 'Joins amino acids together'],
+    ['Large subunit', '#5b21b6', 240, 120, 165, 100, 'Joins the amino acids together'],
     ['Small subunit', '#6d28d9', 300, 262, 165, 290, 'Holds the mRNA in place'],
-    ['mRNA', '#db2777', 450, 215, 475, 250, 'Copy of a gene – read 3 bases (a codon) at a time'],
-    ['Protein chain', '#b45309', 398, 46, 475, 90, 'Amino acids joined in the order the mRNA codes for'] ] },
+    ['tRNA', '#b45309', 352, 192, 475, 170, 'Brings the matching amino acid to the ribosome'],
+    ['mRNA', '#db2777', 450, 215, 475, 250, 'Copy of a gene – read three bases (a codon) at a time'],
+    ['Amino acid', '#047857', 398, 46, 475, 85, 'Building blocks – joined into a protein chain'] ] },
   membrane: { name: 'Cell membrane', color: '#b91c1c', art: membraneArt, labels: [
     ['Phospholipid head', '#b91c1c', 128, 115, 140, 55, 'Water-loving (hydrophilic) – faces outwards'],
     ['Fatty acid tails', '#a16207', 172, 150, 180, 300, 'Water-hating (hydrophobic) – face inwards'],
@@ -179,14 +222,63 @@ export const DIAGRAMS = {
     ['Ribosomes', '#6d28d9', 296, 241, 300, 315, 'Make proteins on the surface of the rough ER'],
     ['Smooth ER', '#db2777', 460, 110, 530, 50, 'No ribosomes – makes lipids (fats)'],
     ['Nucleus', '#1e40af', 110, 260, 130, 325, 'The ER membrane joins onto the nuclear envelope'] ] },
-  golgi: { name: 'Golgi apparatus', color: '#d97706', art: golgiArt, labels: [
-    ['Cisternae', '#b45309', 320, 128, 330, 40, 'Stack of flattened membrane sacs'],
-    ['Vesicle (out)', '#c2410c', 480, 272, 505, 315, 'Carries finished proteins to the membrane'],
-    ['Vesicle (in)', '#b45309', 182, 240, 135, 200, 'Brings proteins from the rough ER'] ] },
+  golgi: { name: 'Golgi body', color: '#d97706', art: golgiArt, labels: [
+    ['Incoming vesicle', '#0f766e', 275, 58, 135, 45, 'Transport vesicle bringing proteins from the ER'],
+    ['Cis face', '#d97706', 225, 105, 135, 105, 'The receiving side, facing the ER'],
+    ['Cisternae', '#b45309', 231, 137, 135, 165, 'Stack of flattened membrane sacs'],
+    ['Trans face', '#c2410c', 249, 233, 135, 240, 'The shipping side – vesicles bud off here'],
+    ['Lumen', '#a16207', 320, 191, 505, 150, 'Space inside each sac where proteins are modified'],
+    ['Forming vesicle', '#ea580c', 398, 247, 505, 220, 'A new vesicle budding off the trans face'],
+    ['Secretory vesicle', '#be123c', 455, 300, 490, 295, 'Carries finished proteins out of the cell (exocytosis)'] ] },
   lysosome: { name: 'Lysosome', color: '#be123c', art: lysoArt, labels: [
-    ['Membrane', '#be123c', 398, 102, 505, 70, 'Keeps the enzymes away from the rest of the cell'],
-    ['Digestive enzymes', '#e11d48', 250, 130, 170, 70, 'Break down molecules'],
-    ['Old organelle', '#9a3412', 268, 200, 135, 270, 'Worn-out part being broken down and recycled'] ] },
+    ['Membrane', '#be123c', 398, 102, 505, 70, 'Lipid layer that keeps the enzymes away from the rest of the cell'],
+    ['Hydrolytic enzymes', '#e11d48', 250, 130, 170, 70, 'A mixture of digestive enzymes that break things down'],
+    ['Transport protein', '#047857', 217, 218, 135, 200, 'Lets the digested materials out into the cytoplasm'],
+    ['Old organelle', '#9a3412', 268, 205, 135, 280, 'Worn-out part being digested and recycled'] ] },
+  plasmodesmata: { name: 'Plasmodesmata', color: '#0f766e', art: plasmoArt, labels: [
+    ['Plasmodesma', '#0f766e', 330, 91, 505, 50, 'A microscopic channel through the cell wall'],
+    ['Cell wall', '#4d7c0f', 320, 140, 505, 120, 'The channels pass straight through it'],
+    ['ER strand', '#db2777', 340, 180, 505, 185, 'A thin tube of ER runs through the middle'],
+    ['Molecules', '#7c3aed', 318, 252, 505, 255, 'Water and small molecules move between cells'],
+    ['Cytoplasm', '#ca8a04', 220, 160, 135, 140, 'Joined to the next cell’s cytoplasm through the channels'],
+    ['Cell membrane', '#2563eb', 156, 230, 135, 240, 'Lines the channel, so the two cells’ membranes join up'] ] },
+  peroxisome: { name: 'Peroxisome', color: '#15803d', art: peroxiArt, labels: [
+    ['Single membrane', '#15803d', 398, 102, 505, 70, 'One membrane (mitochondria and chloroplasts have two)'],
+    ['Crystal core', '#166534', 352, 150, 505, 175, 'A dense core of packed enzymes'],
+    ['Enzymes', '#b45309', 250, 230, 165, 250, 'e.g. catalase – breaks harmful hydrogen peroxide into water and oxygen'] ] },
+  cytoskeleton: { name: 'Cytoskeleton', color: '#16a34a', art: cytoskelArt, labels: [
+    ['Actin filaments', '#dc2626', 350, 70, 505, 45, 'Thin fibres under the membrane – change the cell’s shape and help it move'],
+    ['Centrosome', '#a16207', 360, 130, 505, 120, 'Where the microtubules grow from'],
+    ['Microtubules', '#16a34a', 392, 210, 505, 215, 'Hollow tubes – tracks that move organelles and vesicles'],
+    ['Intermediate filaments', '#7c3aed', 215, 180, 190, 140, 'Rope-like fibres that make the cell strong'],
+    ['Nucleus', '#1e40af', 275, 205, 135, 255, 'Held in place by the cytoskeleton'] ] },
+  animalcell: { name: 'Animal cell', color: '#be123c', art: () => still(CELLS.animal.svg()), labels: [
+    ['Cilium', '#0f766e', 181, 65, 135, 35, 'Hair-like part that can move fluid past the cell'],
+    ['Nucleus', '#1e40af', 290, 128, 135, 85, 'Holds the DNA – nucleolus, nucleoplasm, nuclear pores and envelope'],
+    ['Rough ER', '#be185d', 228, 172, 135, 135, 'Membranes with ribosomes – make proteins'],
+    ['Ribosomes', '#6d28d9', 200, 200, 135, 185, 'Make proteins'],
+    ['Peroxisome', '#15803d', 282, 236, 135, 235, 'Breaks down hydrogen peroxide'],
+    ['Mitochondrion', '#9a3412', 230, 262, 135, 285, 'Releases energy (ATP)'],
+    ['Cell membrane', '#2563eb', 160, 222, 135, 330, 'Controls what enters and leaves'],
+    ['Centrosome', '#a16207', 354, 122, 505, 40, 'Organises microtubules; contains the centrioles'],
+    ['Secretory vesicle', '#be123c', 435, 188, 495, 90, 'Carries proteins out of the cell'],
+    ['Cytoskeleton', '#64748b', 465, 162, 505, 145, 'Protein fibres that hold the cell’s shape'],
+    ['Golgi body', '#d97706', 395, 213, 505, 200, 'Packages proteins into vesicles'],
+    ['Lysosome', '#be123c', 350, 275, 505, 255, 'Digests worn-out organelles'],
+    ['Cytoplasm', '#b45309', 440, 285, 505, 310, 'Jelly-like fluid where reactions happen'] ] },
+  plantcell: { name: 'Plant cell', color: '#16a34a', art: () => still(CELLS.plant.svg()), labels: [
+    ['Nucleus', '#1e40af', 175, 80, 135, 40, 'Holds the DNA and controls the cell'],
+    ['Plasmodesmata', '#0f766e', 150, 131, 135, 100, 'Channels through the cell wall to the next cell'],
+    ['Cell wall', '#4d7c0f', 150, 175, 135, 160, 'Tough outer layer – support and protection'],
+    ['Cell membrane', '#2563eb', 160, 250, 135, 215, 'Controls what enters and leaves'],
+    ['Chloroplast', '#15803d', 195, 262, 135, 270, 'Photosynthesis'],
+    ['Mitochondrion', '#9a3412', 228, 290, 135, 325, 'Releases energy (ATP)'],
+    ['Rough ER', '#be185d', 250, 74, 505, 30, 'Makes proteins'],
+    ['Ribosomes', '#6d28d9', 455, 90, 505, 75, 'Make proteins'],
+    ['Central vacuole', '#0369a1', 425, 150, 505, 125, 'Water-filled sac – keeps the cell turgid'],
+    ['Golgi body', '#d97706', 452, 186, 505, 185, 'Packages proteins into vesicles'],
+    ['Cytoplasm', '#ca8a04', 472, 300, 505, 245, 'Jelly-like fluid'],
+    ['Peroxisome', '#15803d', 440, 292, 505, 300, 'Breaks down hydrogen peroxide'] ] },
   plasmid: { name: 'Bacterium with plasmids', color: '#7c3aed', art: bacteriumArt, labels: [
     ['Plasmid', '#7c3aed', 444, 127, 470, 45, 'Small ring of DNA with extra genes'],
     ['Chromosomal DNA', '#db2777', 360, 170, 330, 330, 'One big loop of DNA, loose in the cytoplasm (no nucleus)'],
@@ -206,7 +298,8 @@ export function diagramSVG(key, { labels = true } = {}) {
 export const DIAGRAM_WORDS = [
   [/nucle(us|i)\b/i, 'nucleus'], [/mitochond/i, 'mitochondria'], [/chloroplast/i, 'chloroplast'], [/ribosom/i, 'ribosome'],
   [/(cell|plasma|surface) membrane/i, 'membrane'], [/cell wall/i, 'wall'], [/vacuole/i, 'vacuole'], [/cytoplasm/i, 'cytoplasm'],
-  [/endoplasmic|\b[rs]?er\b/i, 'er'], [/golgi/i, 'golgi'], [/lysosom/i, 'lysosome'], [/plasmid/i, 'plasmid'],
+  [/endoplasmic|\b[rs]?er\b/i, 'er'], [/golgi/i, 'golgi'], [/lysosom/i, 'lysosome'], [/plasmodesm/i, 'plasmodesmata'], [/plasmid/i, 'plasmid'],
+  [/peroxisom/i, 'peroxisome'], [/cytoskelet/i, 'cytoskeleton'],
 ];
 
 // ---------- whole-cell explorers (click a part to open its notes) ----------
@@ -218,13 +311,17 @@ const mito = (x, y, r) => `<ellipse cx="${x}" cy="${y}" rx="26" ry="13" transfor
 export const CELLS = {
   animal: { name: 'Animal cell', svg: () => `
     ${part('cytoplasm', 'Cytoplasm', `<path d="${BLOB}" fill="#fef3c7"/>`)}
+    ${part('cytoskeleton', 'Cytoskeleton', `<path d="M195 125 L250 105 M330 300 L420 285 M445 140 L485 185 M175 250 L215 290" fill="none" stroke="transparent" stroke-width="10"/><path d="M195 125 L250 105 M330 300 L420 285 M445 140 L485 185 M175 250 L215 290" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="6 3"/>`)}
     ${part('er', 'Rough ER', `<path d="M240 125 q-25 45 0 95 M252 118 q-25 52 0 108" fill="none" stroke="#db2777" stroke-width="7" stroke-linecap="round"/>${dots([[230, 140], [226, 175], [231, 205], [244, 120]])}`)}
     ${part('nucleus', 'Nucleus', `<circle cx="300" cy="170" r="44" fill="#93c5fd" stroke="#1e40af" stroke-width="4"/><circle cx="308" cy="176" r="13" fill="#7c3aed"/>`)}
     ${part('mitochondria', 'Mitochondria', mito(405, 120, 25) + mito(425, 240, -20) + mito(240, 265, 10))}
-    ${part('golgi', 'Golgi apparatus', `<path d="M360 200 q25 18 50 0 M362 214 q23 16 46 0 M366 228 q19 13 38 0" fill="none" stroke="#d97706" stroke-width="7" stroke-linecap="round"/>`)}
+    ${part('golgi', 'Golgi body', `<path d="M360 200 q25 18 50 0 M362 214 q23 16 46 0 M366 228 q19 13 38 0" fill="none" stroke="#d97706" stroke-width="7" stroke-linecap="round"/><circle cx="420" cy="200" r="6" fill="#fecdd3" stroke="#be123c" stroke-width="2"/><circle cx="435" cy="188" r="6" fill="#fecdd3" stroke="#be123c" stroke-width="2"/>`)}
+    ${part('peroxisome', 'Peroxisome', `<circle cx="282" cy="236" r="9" fill="#bbf7d0" stroke="#15803d" stroke-width="2.5"/><rect x="278" y="232" width="8" height="8" fill="#15803d"/>`)}
+    ${part('centrosome', 'Centrosome', `<rect x="346" y="119" width="16" height="7" fill="#a16207"/><rect x="355" y="116" width="7" height="16" fill="#ca8a04"/>`)}
     ${part('lysosome', 'Lysosome', `<circle cx="350" cy="275" r="13" fill="#fecdd3" stroke="#be123c" stroke-width="3"/>`)}
     ${part('ribosome', 'Ribosomes', dots([[340, 105], [455, 175], [300, 290], [200, 200], [380, 165], [195, 150]]))}
-    ${part('membrane', 'Cell membrane', `<path d="${BLOB}" fill="none" stroke="transparent" stroke-width="22"/><path d="${BLOB}" fill="none" stroke="#2563eb" stroke-width="6"/>`)}` },
+    ${part('membrane', 'Cell membrane', `<path d="${BLOB}" fill="none" stroke="transparent" stroke-width="22"/><path d="${BLOB}" fill="none" stroke="#2563eb" stroke-width="6"/>`)}
+    ${part('cilium', 'Cilium', `<path d="M190 90 q-15 -25 -5 -50 M215 76 q-8 -28 8 -50" fill="none" stroke="transparent" stroke-width="12"/><path d="M190 90 q-15 -25 -5 -50 M215 76 q-8 -28 8 -50" fill="none" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/>`)}` },
   plant: { name: 'Plant cell', svg: () => `
     ${part('wall', 'Cell wall', `<rect x="140" y="30" width="360" height="300" rx="20" fill="#a3e635" stroke="#4d7c0f" stroke-width="3"/>`)}
     ${part('cytoplasm', 'Cytoplasm', `<rect x="160" y="50" width="320" height="260" rx="12" fill="#fef9c3"/>`)}
@@ -234,7 +331,11 @@ export const CELLS = {
     ${part('chloroplast', 'Chloroplasts', [[195, 180], [195, 260], [320, 75], [455, 140], [455, 240], [330, 287]].map(([x, y]) =>
       `<ellipse cx="${x}" cy="${y}" rx="${x < 200 || x > 450 ? 11 : 24}" ry="${x < 200 || x > 450 ? 22 : 11}" fill="#22c55e" stroke="#14532d" stroke-width="2"/>`).join(''))}
     ${part('mitochondria', 'Mitochondria', mito(400, 72, 0) + mito(250, 290, 0))}
-    ${part('ribosome', 'Ribosomes', dots([[175, 130], [455, 90], [460, 285], [270, 72], [175, 295]]))}` },
+    ${part('er', 'Rough ER', `<path d="M232 60 q12 14 0 28 M244 58 q12 16 0 32" fill="none" stroke="#db2777" stroke-width="5" stroke-linecap="round"/>${dots([[230, 64], [242, 82], [256, 70]])}`)}
+    ${part('golgi', 'Golgi body', `<path d="M432 180 q20 12 40 0 M434 191 q18 10 36 0 M437 201 q15 8 30 0" fill="none" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>`)}
+    ${part('peroxisome', 'Peroxisome', `<circle cx="440" cy="292" r="8" fill="#bbf7d0" stroke="#15803d" stroke-width="2.5"/><rect x="436" y="288" width="7" height="7" fill="#15803d"/>`)}
+    ${part('ribosome', 'Ribosomes', dots([[175, 130], [455, 90], [460, 285], [270, 72], [175, 295]]))}
+    ${part('plasmodesmata', 'Plasmodesmata', [[138, 128], [138, 218], [478, 188]].map(([x, y]) => `<rect x="${x}" y="${y}" width="24" height="7" fill="#fef9c3" stroke="#0f766e" stroke-width="1.5"/>`).join(''))}` },
   bacteria: { name: 'Bacterial cell', svg: () => `
     ${part('wall', 'Cell wall', `<rect x="130" y="90" width="380" height="180" rx="90" fill="#fde68a" stroke="#92400e" stroke-width="5"/>`)}
     ${part('cytoplasm', 'Cytoplasm', `<rect x="142" y="102" width="356" height="156" rx="78" fill="#fef9c3"/>`)}
