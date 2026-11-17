@@ -308,3 +308,4 @@ details.topic-menu > summary:hover { background: var(--panel2); color: var(--ink
   .note-page .d-fig { order: -1; }            /* on a phone, the pictures come first */
   .note-nav { justify-content: center; }
 }
+.topic-menu .menu { left: 0; right: auto; }   /* open towards the right so it never goes off-screen */

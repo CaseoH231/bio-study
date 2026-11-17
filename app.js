@@ -158,6 +158,7 @@ function dashboard() {
   const figs = notes.filter(({ e }) => DIAGRAMS[e.diagram] || e.image).length;
   const points = notes.reduce((n, { e }) => n + (e.notes?.length || 0), 0);
   const recent = [...notes].reverse().slice(0, 6);
+  const toCheck = notes.filter(({ e }) => e.filled);
   return `<div class="bar"><h2>Dashboard</h2><div class="tools"><button data-act="new-topic">+ New topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
     <section class="hero"><div class="hello"><h2>${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</h2>
       <p>${notes.length ? `You have ${notes.length} notes across ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}. Ready for a quick quiz?` : 'Add your first notes, or pick a ready-made topic.'}</p>
@@ -168,6 +169,10 @@ function dashboard() {
     ${db.topics.length ? `<div class="tgrid">${kids().map(folderCard).join('')}
       <button class="tcard add" data-act="new-topic"><h3>+ New topic</h3><span class="tn">Ready-made or blank</span></button></div>`
     : '<div class="empty"><p>You have no topics yet.</p><button class="primary" data-act="new-topic">+ New topic</button></div>'}
+    ${toCheck.length ? `<h3 class="sect-h">Check these against your notes <small class="where">(${toCheck.length})</small></h3>
+      <p class="lead">I filled in these definitions for you. Open one and press Edit to put it in your own words – the yellow tag goes away when you save.</p>
+      <div class="card-list"><ul class="list">${toCheck.map(({ e, t }) =>
+      `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`).join('')}</ul></div>` : ''}
     ${recent.length ? `<h3 class="sect-h">Latest notes</h3><div class="card-list"><ul class="list">${recent.map(({ e, t }) =>
       `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`).join('')}</ul></div>` : ''}`;
 }
@@ -210,7 +215,11 @@ const refFigure = (ref, alt) => `<figure class="ref"><img src="${ref.src}" alt="
 
 function card(e, t, showTopic = false) {
   const ref = REFS[e.diagram];
-  const thumb = ref ? `<img src="${ref.src}" alt="" loading="lazy">` : e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
+  // A textbook diagram shared by several notes (e.g. the whole plant cell) would make their cards look the same,
+  // so those cards use the note's own simple outline instead.
+  const shared = ref && t.entries.filter((x) => REFS[x.diagram] === ref).length > 1;
+  const thumb = ref && !(shared && DIAGRAMS[e.diagram]) ? `<img src="${ref.src}" alt="" loading="lazy">`
+    : e.diagram && DIAGRAMS[e.diagram] ? diagramSVG(e.diagram, { labels: false })
     : e.image ? `<img src="${e.image}" alt="">` : `<span class="initial">${esc(e.title[0] || '?')}</span>`;
   return `<a class="card" href="${hrefNote(e.id)}" data-entry="${e.id}" style="--c:${colorOf(e, t)}">
     <div class="thumb">${thumb}</div>
