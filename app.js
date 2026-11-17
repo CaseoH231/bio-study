@@ -162,7 +162,7 @@ function dashboard() {
   return `<div class="bar"><h2>Dashboard</h2><div class="tools"><button data-act="new-topic">+ New topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
     <section class="hero"><div class="hello"><h2>${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</h2>
       <p>${notes.length ? `You have ${notes.length} notes across ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}. Ready for a quick quiz?` : 'Add your first notes, or pick a ready-made topic.'}</p>
-      <div class="row">${notes.length ? '<button class="primary" data-act="cards">Start flashcards</button>' : ''}<button data-act="paste">Paste my notes</button></div></div>
+      <div class="row"><button class="primary" data-act="scan">📷 Scan a photo of my notes</button>${notes.length ? '<button data-act="cards">Start flashcards</button>' : ''}</div></div>
       <div class="hero-art">${cellSVG('plant')}<small>Click a part of the cell</small></div></section>
     <div class="stats">${stat(notes.length, 'notes')}${stat(db.topics.length, 'topics')}${stat(figs, 'with a diagram')}${stat(points, 'key points')}${stat(db.rounds || 0, 'flashcard rounds done')}</div>
     <h3 class="sect-h">Topics</h3>
@@ -276,6 +276,7 @@ $('#main').addEventListener('click', (ev) => {
   if (act === 'move-topic') openMove(t);
   if (act === 'paste') openPaste();
   if (act === 'cards') openCards();
+  if (act === 'scan') openScan();
   if (act === 'new-topic') openTopicPicker();
   if (act === 'rename-topic') {
     const n = prompt('New name for this topic:', t.name);
@@ -613,6 +614,196 @@ Ribosomes - where proteins are made</code>
   ta.focus();
 }
 
+// ---------- scan a photo of your notes ----------
+// The photos go to this site's Worker (/api/organise), which asks Claude to read them and plan where each note goes.
+// Nothing is saved until you've checked the plan.
+const PASS_KEY = 'bio-study-passcode';
+const passcode = () => { try { return localStorage.getItem(PASS_KEY) || ''; } catch { return ''; } };
+const setPasscode = (v) => { try { localStorage.setItem(PASS_KEY, v); } catch { /* asked again next time */ } };
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('unreadable'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+// Draw (part of) a photo onto a canvas no bigger than `max` pixels along its long side.
+function drawScaled(img, max, sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight, filter = '') {
+  const k = Math.min(1, max / Math.max(sw, sh));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k));
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  if (filter) g.filter = filter;
+  g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+// A hand-drawn diagram cut out of the page (box is in thousandths of the page), cleaned up to black and white.
+function cropDrawing(img, b) {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  let x0 = Math.min(b.x0, b.x1) / 1000, x1 = Math.max(b.x0, b.x1) / 1000, y0 = Math.min(b.y0, b.y1) / 1000, y1 = Math.max(b.y0, b.y1) / 1000;
+  if (x1 - x0 < 0.05 || y1 - y0 < 0.05) return '';
+  const pad = 0.03;
+  x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(1, x1 + pad); y1 = Math.min(1, y1 + pad);
+  return drawScaled(img, 1000, x0 * W, y0 * H, (x1 - x0) * W, (y1 - y0) * H, 'grayscale(1) contrast(1.35) brightness(1.08)').toDataURL('image/jpeg', 0.8);
+}
+
+function openScan() {
+  let files = [];
+  openDialog(`
+    <div class="dlg-head"><h2 class="grow">Scan your notes</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body form">
+      <p class="hint">Take a photo of each page (or pick them from your photos). I'll read your handwriting, make a note for each thing you wrote about,
+        put each one in the right topic – making new topics or sub-topics only when nothing fits – and cut out any diagrams you drew.
+        You'll get to check everything before it's added.</p>
+      <label class="scan-pick"><input type="file" id="scan-files" accept="image/*" multiple><span>📷 Choose photos</span></label>
+      <div class="scan-thumbs" id="scan-thumbs"></div>
+    </div>
+    <div class="dlg-foot"><span class="grow where" id="scan-count"></span><button data-close>Cancel</button><button class="primary" id="scan-go" disabled>Read my notes</button></div>`, 'small');
+  const show = () => {
+    $('#scan-thumbs').innerHTML = files.map((f, i) => `<figure><img src="${URL.createObjectURL(f)}" alt="Page ${i + 1}"><button type="button" class="link danger" data-rm="${i}">Remove</button></figure>`).join('');
+    $('#scan-count').textContent = files.length ? `${plural(files.length, 'page')}` : '';
+    $('#scan-go').disabled = !files.length;
+  };
+  $('#scan-files').onchange = (ev) => { files = [...files, ...ev.target.files].slice(0, 8); ev.target.value = ''; show(); };
+  $('#scan-thumbs').onclick = (ev) => { const b = ev.target.closest('[data-rm]'); if (b) { files.splice(+b.dataset.rm, 1); show(); } };
+  $('#scan-go').onclick = () => readNotes(files);
+}
+
+async function readNotes(files) {
+  const busy = (msg) => openDialog(`<div class="dlg-head"><h2 class="grow">Reading your notes…</h2></div>
+    <div class="dlg-body scan-busy"><div class="spinner"></div><p>${msg}</p></div>`, 'small');
+  busy('Getting your photos ready…');
+  let pages;
+  try { pages = await Promise.all(files.map(loadImage)); } catch {
+    openScan(); return toast('One of those photos couldn’t be opened – try a JPG or PNG.');
+  }
+  const images = pages.map((img) => ({ media_type: 'image/jpeg', data: drawScaled(img, 1568).toDataURL('image/jpeg', 0.85).split(',')[1] }));
+  const tree = treeOrder().map(({ t }) => ({ id: t.id, name: t.name, parent: t.parent || null, notes: t.entries.map((e) => e.title) }));
+  busy(`Reading ${plural(pages.length, 'page')} of handwriting and sorting it into topics. This usually takes under a minute.`);
+
+  let res, data = {};
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch('api/organise', { method: 'POST', headers: { 'content-type': 'application/json', 'x-passcode': passcode() }, body: JSON.stringify({ images, tree }) });
+      data = await res.json().catch(() => ({}));
+    } catch { res = null; }
+    if (res?.status !== 401) break;
+    const p = prompt(attempt ? 'That passcode didn’t work. Try again:' : 'Enter the passcode for scanning notes:');
+    if (!p) { dlg.close(); return; }
+    setPasscode(p.trim());
+  }
+  if (res?.ok && data.plan) return reviewPlan(data.plan, pages);
+  const why = {
+    'not-set-up': 'Scanning isn’t switched on yet: an Anthropic API key and a passcode need adding to the Worker in Cloudflare (see the README).',
+    'bad-key': 'The Anthropic API key saved in Cloudflare isn’t working – check it there.',
+    busy: 'The note reader is busy right now. Try again in a minute.',
+    refused: 'The note reader couldn’t process these photos.',
+    'too-long': 'That was too much to read in one go – try fewer pages at a time.',
+    'too-big': 'Those photos are too big together – try fewer pages at a time.',
+    passcode: 'Wrong passcode.',
+  }[data.error] || (res && res.status !== 404 && res.status !== 405 ? 'Something went wrong reading the notes. Try again.'
+    : 'Scanning only works on the online site (bio-study.adrian11jonker.workers.dev), with an internet connection.');
+  openDialog(`<div class="dlg-head"><h2 class="grow">Couldn’t read the notes</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body"><p>${esc(why)}</p></div><div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
+}
+
+// Show what Claude found, let you untick or rename things, then add it all.
+function reviewPlan(plan, pages) {
+  const known = new Set(db.topics.map((t) => t.id));
+  const fresh = (plan.new_topics || []).filter((nt) => nt.key && nt.name && !known.has(nt.key));
+  const keys = new Set(fresh.map((nt) => nt.key));
+  const valid = (id) => known.has(id) || keys.has(id);
+  fresh.forEach((nt) => { if (!valid(nt.parent) || nt.parent === nt.key) nt.parent = null; });
+  const notes = (plan.notes || []).filter((n) => n.title?.trim());
+  if (notes.some((n) => !valid(n.topic))) {
+    fresh.push({ key: 'new-photos', name: 'From my photos', parent: null }); keys.add('new-photos');
+    notes.forEach((n) => { if (!valid(n.topic)) n.topic = 'new-photos'; });
+  }
+  const drawings = notes.map((n) => (n.drawing && pages[n.drawing.page - 1] ? cropDrawing(pages[n.drawing.page - 1], n.drawing) : ''));
+  const newByKey = Object.fromEntries(fresh.map((nt) => [nt.key, nt]));
+  const pathTo = (id, seen = new Set()) => {
+    if (known.has(id)) return pathOf(topicOf(id));
+    const nt = newByKey[id];
+    if (!nt || seen.has(id)) return '';
+    seen.add(id);
+    return (nt.parent ? pathTo(nt.parent, seen) + ' › ' : '') + nt.name;
+  };
+  const existingNote = (n) => known.has(n.topic) && topicOf(n.topic).entries.find((e) => e.title.toLowerCase() === n.title.trim().toLowerCase());
+
+  openDialog(`
+    <div class="dlg-head"><h2 class="grow">Check before adding</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body form">
+      <p class="hint">${esc(plan.summary || '')}</p>
+      ${plan.unreadable?.length ? `<p class="hint warnbox"><b>Couldn’t read for sure:</b> ${plan.unreadable.map(esc).join(' · ')}</p>` : ''}
+      ${fresh.length ? `<h4 class="sect">New topics <small>– rename them if you like</small></h4>
+        <div class="plan-topics">${fresh.map((nt) => `<label><span class="chip new">New</span>
+          <input type="text" data-key="${esc(nt.key)}" value="${esc(nt.name)}"><small>${nt.parent ? `inside ${esc(pathTo(nt.parent))}` : 'top level'}</small></label>`).join('')}</div>` : ''}
+      <h4 class="sect">Notes <small>– untick any you don’t want</small></h4>
+      <div class="plan-list">${notes.map((n, i) => {
+        const old = existingNote(n);
+        return `<label class="plan-note"><input type="checkbox" data-i="${i}" checked>
+          <div class="pn-body"><div class="pn-top"><b>${esc(n.title)}</b>
+            ${old ? '<span class="chip">adds to your existing note</span>' : ''}${n.filled ? '<span class="chip warn">definition added for you</span>' : ''}</div>
+            <div class="where">→ ${esc(pathTo(n.topic))}</div>
+            ${n.definition && !old?.definition ? `<p>${esc(n.definition)}</p>` : ''}
+            ${n.key_points?.length ? `<ul>${n.key_points.map((k) => `<li>${esc(k)}</li>`).join('')}</ul>` : ''}</div>
+          ${drawings[i] ? `<img class="pn-draw" src="${drawings[i]}" alt="Your drawing">` : ''}</label>`;
+      }).join('')}</div>
+    </div>
+    <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="plan-go">Add ${plural(notes.length, 'note')}</button></div>`, 'small plan-dlg');
+
+  const ticked = () => $$('.plan-note input:checked', dlg).map((x) => +x.dataset.i);
+  $('.plan-list', dlg).addEventListener('change', () => { const k = ticked().length; $('#plan-go').textContent = `Add ${plural(k, 'note')}`; $('#plan-go').disabled = !k; });
+  $('#plan-go').onclick = () => {
+    const chosen = ticked();
+    const names = Object.fromEntries($$('[data-key]', dlg).map((x) => [x.dataset.key, x.value.trim()]));
+    // Make only the new topics that end up holding something, parents first.
+    const need = new Set();
+    const mark = (id) => { while (newByKey[id] && !need.has(id)) { need.add(id); id = newByKey[id].parent; } };
+    chosen.forEach((i) => mark(notes[i].topic));
+    const idFor = {};
+    const resolve = (id) => (known.has(id) ? id : idFor[id]);
+    const make = (key, seen = new Set()) => {
+      if (idFor[key] || seen.has(key)) return idFor[key];
+      seen.add(key);
+      const nt = newByKey[key];
+      const parent = nt.parent ? (known.has(nt.parent) ? nt.parent : make(nt.parent, seen)) : null;
+      const name = names[key] || nt.name;
+      const same = kids(parent || null).find((t) => t.name.toLowerCase() === name.toLowerCase());
+      idFor[key] = (same || newTopic(name, parent)).id;
+      return idFor[key];
+    };
+    need.forEach((k) => make(k));
+    let added = 0, updated = 0, first = null;
+    for (const i of chosen) {
+      const n = notes[i], t = topicOf(resolve(n.topic));
+      if (!t) continue;
+      first = first || t.id;
+      const points = (n.key_points || []).map((k) => k.trim()).filter(Boolean);
+      const diagram = n.diagram && n.diagram !== 'none' ? n.diagram : '';
+      const old = t.entries.find((e) => e.title.toLowerCase() === n.title.trim().toLowerCase());
+      if (old) {
+        if (!old.definition && n.definition) { old.definition = n.definition; if (n.filled) old.filled = true; }
+        old.notes = [...(old.notes || []), ...points.filter((k) => !(old.notes || []).includes(k))];
+        if (!old.found && n.found_in) old.found = n.found_in;
+        if (!old.diagram && diagram) old.diagram = diagram;
+        if (!old.image && drawings[i]) old.image = drawings[i];
+        updated++;
+      } else {
+        t.entries.push({ id: uid(), title: n.title.trim(), definition: n.definition || '', notes: points, found: n.found_in || '',
+          diagram, image: drawings[i] || '', ...(n.filled ? { filled: true } : {}) });
+        added++;
+      }
+    }
+    if (!save()) return;
+    dlg.close(); openTopic(first || current);
+    toast(`Added ${plural(added, 'new note')}${updated ? `, updated ${updated}` : ''}`);
+  };
+}
+
 // ---------- flashcards ----------
 function openCards() {
   const withDef = all().filter(({ e }) => e.definition);
@@ -675,6 +866,7 @@ function runCards(deck, mode) {
 
 // ---------- header buttons ----------
 $('#btn-paste').onclick = openPaste;
+$('#btn-scan').onclick = openScan;
 $('#btn-cards').onclick = openCards;
 $('#search').addEventListener('input', (ev) => { query = ev.target.value.trim(); render(); });
 $('#btn-export').onclick = () => {

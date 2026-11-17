@@ -1,10 +1,14 @@
 // Cloudflare settings for Bio Study Notes as its own Worker ("bio-study").
-// "." below means the top of this repository.
 {
   "name": "bio-study",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    // A plain website: every file in this folder is served as-is (see .assetsignore for what's left out).
-    "directory": "."
+    // The site: every file in this folder is served as-is (see .assetsignore for what's left out).
+    "directory": ".",
+    "binding": "ASSETS",
+    // Only /api/... runs the Worker code (reading photos of notes).
+    "run_worker_first": ["/api/*"]
   }
 }

@@ -9,3 +9,6 @@ wrangler.jsonc
 .assetsignore
 README.md
 CLAUDE.md
+worker
+package.json
+package-lock.json

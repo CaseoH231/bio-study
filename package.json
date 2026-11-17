@@ -1,0 +1,10 @@
+{
+  "name": "bio-study",
+  "private": true,
+  "type": "module",
+  "description": "Bio Study Notes – the website plus a small Cloudflare Worker that reads photos of notes",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "zod": "^3.25.0"
+  }
+}
