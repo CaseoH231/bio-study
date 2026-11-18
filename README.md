@@ -89,6 +89,7 @@ style.css             all the styling (Coop Ledger-style layout)
 app.js                everything the app does: topics, cards, dialogs, paste, flashcards, saving
 data.js               the starting notes: my notes as of 18 Nov (notebook + scanner + study helper)
 img/                  photos of my hand-drawn diagrams (img/notes/: drawings cut out by the scanner)
+img/slides/           diagrams from the lesson slides
 img/ref/              textbook diagrams from Wikimedia Commons (credits in refs.js)
 refs.js               which textbook diagram goes with which note, and who made it
 presets.js            the ready-made topics

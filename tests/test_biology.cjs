@@ -83,14 +83,20 @@ const path = require('path');
     { id: 't-animal', name: 'Animal cells', color: '#be123c', entries: [] }, { id: 'mine', name: 'My topic', color: '#2563eb', entries: [] }] })));
   await p.reload();
   const upgraded2 = await roots();
+  // Someone on starter 4 gets slide 19 added to their Nucleus note (and nothing else changes).
+  await p.evaluate(() => localStorage.setItem('bio-study-notes-v1', JSON.stringify({ version: 1, starter: 4, topics: [
+    { id: 't-headstart', name: 'Headstart', color: '#7c3aed', entries: [] },
+    { id: 't-shared', parent: 't-headstart', name: 'Organelles', color: '#2563eb', entries: [{ id: 'e-nucleus', title: 'Nucleus', definition: 'Mine', notes: ['my point'], diagram: 'nucleus', image: '' }] }] })));
+  await p.goto('http://localhost:8766/#/note/e-nucleus'); await p.reload(); await p.waitForSelector('.note-page');
+  const slide = [await p.getAttribute('.note-page .myimg img', 'src'), await p.textContent('.note-page .myimg figcaption'), await p.textContent('.note-page .def')].join(' | ');
   await p.evaluate(() => localStorage.clear());
 
   const wantFigs = every.filter((e) => e.diagram).length, wantPhotos = every.filter((e) => e.image).length;
-  console.log('explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
+  console.log('slide', slide, 'explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
     'pasted', pasted.join('|'), 'preset', preset, preset2, 'upgraded', upgraded, 'errors', errs.length);
   const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Plant-Only Organelles › Plasmodesmata') &&
     backTo.includes('Plant-Only Organelles') && tiles === 'Organelles|Cells' && explorerOn.join('|') === 'Cells' &&
-    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && cards === every.length &&
+    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && slide === 'img/slides/nucleus-slide19.jpg | From the lesson slides (slide 19) | Mine' && cards === every.length &&
     figs === wantFigs && photos === wantPhotos && !broken && opened === 'Plasmodesmata' &&
     pasted.length === 3 && pasted.includes('Active site') && preset === 6 && preset2 === 6 &&
     upgraded === 'Headstart|My topic' && !errs.length;

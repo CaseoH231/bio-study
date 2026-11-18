@@ -6,7 +6,7 @@
 // (Usually you'd use "Publish my notes" in the app instead – new visitors then get the published notes.)
 export const STARTER = {
   "version": 1,
-  "starter": 4,
+  "starter": 5,
   "topics": [
     {
       "id": "t-headstart",
@@ -82,8 +82,11 @@ export const STARTER = {
           "filled": true,
           "definition": "Contains the cell’s DNA and controls the cell’s activities.",
           "notes": [
-            "Parts (from my diagram): nuclear envelope, nuclear pore, nucleolus, nucleoplasm"
-          ]
+            "Parts (from my diagram): nuclear envelope, nuclear pore, nucleolus, nucleoplasm",
+            "Parts (from slide 19): nuclear pore, nuclear envelope, euchromatin, heterochromatin, nucleolus (pars granulosa, pars fibrosa), nucleolar organising centre, rough ER joined to the envelope"
+          ],
+          "image": "img/slides/nucleus-slide19.jpg",
+          "imageCaption": "From the lesson slides (slide 19)"
         },
         {
           "id": "e-mito",

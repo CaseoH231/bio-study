@@ -47,6 +47,16 @@ function upgradeStarter(d) {
       mine.forEach((t) => { if (!t.parent) t.parent = 't-headstart'; });
     }
   }
+  if (from < 5) {
+    // Slide 19 (the labelled nucleus close-up from the lesson) goes on the Nucleus note, if it hasn't got a picture.
+    const n = d.topics.flatMap((t) => t.entries).find((e) => e.id === 'e-nucleus');
+    const fresh5 = STARTER.topics.flatMap((t) => t.entries).find((e) => e.id === 'e-nucleus');
+    if (n && fresh5 && !n.image) {
+      n.image = fresh5.image; n.imageCaption = fresh5.imageCaption;
+      const point = fresh5.notes.at(-1);
+      if (!(n.notes || []).includes(point)) n.notes = [...(n.notes || []), point];
+    }
+  }
   d.starter = STARTER.starter;
   return true;
 }
@@ -393,7 +403,7 @@ function notePage() {
         </div>
         ${hasFig ? `<div class="d-fig">
           ${ref ? refFigure(ref, `Diagram of ${e.title}`) : d ? `<div class="fig">${diagramSVG(e.diagram)}</div>` : ''}
-          ${e.image ? `<figure class="myimg"><img src="${e.image}" alt="My diagram of ${esc(e.title)}"><figcaption>My own diagram</figcaption></figure>` : ''}
+          ${e.image ? `<figure class="myimg"><img src="${e.image}" alt="My diagram of ${esc(e.title)}"><figcaption>${esc(e.imageCaption || 'My own diagram')}</figcaption></figure>` : ''}
         </div>` : ''}
       </div>
       <div class="note-nav">
@@ -519,6 +529,7 @@ function openEdit(id, preset = {}) {
     };
     let entry = e;
     if (hit) {
+      if (data.image !== e.image) delete e.imageCaption; // a new picture is your own
       Object.assign(e, data);
       delete e.filled; // once you've edited it, it's yours
       if (hit.t !== t) { hit.t.entries = hit.t.entries.filter((x) => x !== e); t.entries.push(e); }
