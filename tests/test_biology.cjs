@@ -65,7 +65,7 @@ const path = require('path');
   const preset2 = await p.$$eval('.card', (c) => c.length);
 
   // Make a sub-topic inside a topic, then check the breadcrumb trail.
-  await p.goto('http://localhost:8766/#/topic/t-animal'); await p.waitForFunction(() => document.querySelector('.bar h2')?.textContent.includes('Cells'));
+  await p.goto('http://localhost:8766/#/topic/t-animal'); await p.waitForFunction(() => document.querySelector('.bar h2')?.textContent.includes('Eukaryotic cells'));
   await p.click('[data-act=sub-topic]');
   await p.fill('#blank-topic input', 'Cell division'); await p.click('#blank-topic button'); await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), 'Cell division');
   const crumbs = await p.textContent('.crumbs');
@@ -97,9 +97,9 @@ const path = require('path');
   const wantFigs = every.filter((e) => e.diagram).length, wantPhotos = every.filter((e) => e.image).length;
   console.log('split', split, organelleKids, 'slide', slide, 'explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
     'pasted', pasted.join('|'), 'preset', preset, preset2, 'upgraded', upgraded, 'errors', errs.length);
-  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Eukaryotic › Plant-Only Organelles › Plasmodesmata') &&
-    backTo.includes('Plant-Only Organelles') && tiles === 'Organelles|Cells' && explorerOn.join('|') === 'Cells' &&
-    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && slide === 'img/slides/nucleus-slide19.jpg | From the lesson slides (slide 19) | Mine' && split.includes('Organelles › Eukaryotic › Nucleus') && organelleKids === 'Eukaryotic:1|Prokaryotic:0' && cards === every.length &&
+  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Plant cells only › Plasmodesmata') &&
+    backTo.includes('Plant cells only') && tiles === 'Cell types|Organelles|Plasma membrane' && explorerOn.join('|') === 'Eukaryotic cells' &&
+    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cell types › Eukaryotic cells › Cell division') && upgraded2 === 'Headstart|My topic' && slide === 'img/slides/nucleus-slide19.jpg | From the lesson slides (slide 19) | Mine' && split.includes('Organelles › Eukaryotic › Nucleus') && organelleKids === 'Eukaryotic:1|Prokaryotic:0' && cards === every.length &&
     figs === wantFigs && photos === wantPhotos && !broken && opened === 'Plasmodesmata' &&
     pasted.length === 3 && pasted.includes('Active site') && preset === 6 && preset2 === 6 &&
     upgraded === 'Headstart|My topic' && !errs.length;

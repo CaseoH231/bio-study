@@ -6,7 +6,7 @@
 // (Usually you'd use "Publish my notes" in the app instead – new visitors then get the published notes.)
 export const STARTER = {
   "version": 1,
-  "starter": 6,
+  "starter": 7,
   "topics": [
     {
       "id": "t-headstart",
@@ -15,58 +15,47 @@ export const STARTER = {
       "entries": []
     },
     {
-      "id": "t-plant",
-      "parent": "t-euk",
-      "name": "Plant-Only Organelles",
-      "color": "#16a34a",
+      "id": "t-celltypes",
+      "name": "Cell types",
+      "color": "#be123c",
+      "entries": [],
+      "parent": "t-headstart"
+    },
+    {
+      "id": "t-animal",
+      "parent": "t-celltypes",
+      "name": "Eukaryotic cells",
+      "color": "#be123c",
       "entries": [
         {
-          "id": "e-wall",
-          "title": "Cell wall",
-          "diagram": "wall",
-          "found": "Plant only",
-          "definition": "The tough outer layer of a plant cell. It gives structural support and protection.",
+          "id": "e-animalcell",
+          "title": "Animal cell",
+          "diagram": "animalcell",
+          "image": "img/animal-cell.jpg",
+          "found": "Animal",
+          "filled": true,
+          "definition": "A eukaryotic cell with a nucleus but no cell wall, chloroplasts or large central vacuole.",
           "notes": [
-            "Tough outer layer",
-            "Structural support",
-            "Protection"
+            "Parts (from my diagram): cell membrane, cytoplasm, nucleus, rough & smooth ER, ribosomes, Golgi body, secretory vesicles, mitochondrion, lysosome, peroxisome, centrosome & centrioles, cilium"
           ]
         },
         {
-          "id": "e-chloro",
-          "title": "Chloroplasts",
-          "diagram": "chloroplast",
-          "found": "Plant only",
-          "definition": "Plastids containing chlorophyll – where photosynthesis happens.",
-          "notes": [
-            "Plastids containing chlorophyll",
-            "Photosynthesis"
-          ]
-        },
-        {
-          "id": "e-vacuole",
-          "title": "Large central vacuole",
-          "diagram": "vacuole",
-          "found": "Plant only",
-          "definition": "A large water-filled sac surrounded by a membrane (the tonoplast). It stores nutrients and maintains turgor pressure.",
-          "notes": [
-            "Large water-filled sac surrounded by a membrane",
-            "The membrane is called the tonoplast",
-            "Stores nutrients",
-            "Maintains turgor pressure – to keep the plant upright"
-          ]
-        },
-        {
-          "id": "e-plasmo",
-          "title": "Plasmodesmata",
-          "diagram": "plasmodesmata",
-          "found": "Plant only",
-          "definition": "Microscopic channels through the cell wall.",
-          "notes": [
-            "Microscopic channels through the cell wall"
-          ]
+          "id": "e-plantcell",
+          "title": "Plant cell",
+          "diagram": "plantcell",
+          "found": "Plant",
+          "filled": true,
+          "definition": "A eukaryotic cell with a cell wall, chloroplasts and a large central vacuole, as well as all the shared organelles.",
+          "notes": []
         }
       ]
+    },
+    {
+      "id": "t-prok",
+      "parent": "t-celltypes",
+      "name": "Prokaryotic cells",
+      "color": "#b45309",
+      "entries": []
     },
     {
       "id": "t-shared",
@@ -78,7 +67,7 @@ export const STARTER = {
     {
       "id": "t-euk",
       "parent": "t-shared",
-      "name": "Eukaryotic",
+      "name": "In all eukaryotic cells",
       "color": "#0891b2",
       "entries": [
         {
@@ -172,7 +161,68 @@ export const STARTER = {
           "filled": true,
           "definition": "A network of protein fibres that supports the cell, keeps its shape and moves things around inside it.",
           "notes": []
+        }
+      ]
+    },
+    {
+      "id": "t-plant",
+      "parent": "t-shared",
+      "name": "Plant cells only",
+      "color": "#16a34a",
+      "entries": [
+        {
+          "id": "e-wall",
+          "title": "Cell wall",
+          "diagram": "wall",
+          "found": "Plant only",
+          "definition": "The tough outer layer of a plant cell. It gives structural support and protection.",
+          "notes": [
+            "Tough outer layer",
+            "Structural support",
+            "Protection"
+          ]
         },
+        {
+          "id": "e-chloro",
+          "title": "Chloroplasts",
+          "diagram": "chloroplast",
+          "found": "Plant only",
+          "definition": "Plastids containing chlorophyll – where photosynthesis happens.",
+          "notes": [
+            "Plastids containing chlorophyll",
+            "Photosynthesis"
+          ]
+        },
+        {
+          "id": "e-vacuole",
+          "title": "Large central vacuole",
+          "diagram": "vacuole",
+          "found": "Plant only",
+          "definition": "A large water-filled sac surrounded by a membrane (the tonoplast). It stores nutrients and maintains turgor pressure.",
+          "notes": [
+            "Large water-filled sac surrounded by a membrane",
+            "The membrane is called the tonoplast",
+            "Stores nutrients",
+            "Maintains turgor pressure – to keep the plant upright"
+          ]
+        },
+        {
+          "id": "e-plasmo",
+          "title": "Plasmodesmata",
+          "diagram": "plasmodesmata",
+          "found": "Plant only",
+          "definition": "Microscopic channels through the cell wall.",
+          "notes": [
+            "Microscopic channels through the cell wall"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mwlg3xh6vd9tx",
+      "name": "Animal cells only",
+      "color": "#0891b2",
+      "entries": [
         {
           "id": "e-lyso",
           "title": "Lysosomes",
@@ -187,47 +237,19 @@ export const STARTER = {
             "Exocytosis – exo = exit, cyt = cell"
           ]
         }
-      ]
-    },
-    {
-      "id": "t-prok",
-      "parent": "t-shared",
-      "name": "Prokaryotic",
-      "color": "#b45309",
-      "entries": []
-    },
-    {
-      "id": "t-animal",
-      "parent": "t-headstart",
-      "name": "Cells",
-      "color": "#be123c",
-      "entries": [
-        {
-          "id": "e-animalcell",
-          "title": "Animal cell",
-          "diagram": "animalcell",
-          "image": "img/animal-cell.jpg",
-          "found": "Animal",
-          "filled": true,
-          "definition": "A eukaryotic cell with a nucleus but no cell wall, chloroplasts or large central vacuole.",
-          "notes": [
-            "Parts (from my diagram): cell membrane, cytoplasm, nucleus, rough & smooth ER, ribosomes, Golgi body, secretory vesicles, mitochondrion, lysosome, peroxisome, centrosome & centrioles, cilium"
-          ]
-        },
-        {
-          "id": "e-plantcell",
-          "title": "Plant cell",
-          "diagram": "plantcell",
-          "found": "Plant",
-          "filled": true,
-          "definition": "A eukaryotic cell with a cell wall, chloroplasts and a large central vacuole, as well as all the shared organelles.",
-          "notes": []
-        }
-      ]
+      ],
+      "parent": "t-shared"
     },
     {
       "id": "mwlfuym70tjyw",
       "name": "Plasma membrane",
+      "color": "#7c3aed",
+      "entries": [],
+      "parent": "t-headstart"
+    },
+    {
+      "id": "t-membrane",
+      "name": "Membrane structure",
       "color": "#7c3aed",
       "entries": [
         {
@@ -247,24 +269,17 @@ export const STARTER = {
           "image": "img/notes/phospholipid-bilayer.jpg"
         },
         {
-          "id": "mwlfuym8cnhp8",
-          "title": "Glycolipid",
-          "definition": "A component of the cell surface membrane.",
-          "notes": [],
+          "id": "mwlfuym8ph1nr",
+          "title": "Phospholipid bilayer",
+          "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
+          "notes": [
+            "Fluid mosaic model: phospholipids arranged in a bilayer, with globular proteins in between",
+            "Heads (hydrophilic, \"water liker\") face the water on the outside and inside; tails (hydrophobic, \"water hater\") face each other in the middle",
+            "Parts (from my diagram): extrinsic and intrinsic proteins, outside, inside, water liker, water hater"
+          ],
           "found": "",
           "diagram": "",
-          "image": "",
-          "filled": true
-        },
-        {
-          "id": "mwlfuym8egiy6",
-          "title": "Glycoprotein",
-          "definition": "A component of the cell surface membrane.",
-          "notes": [],
-          "found": "",
-          "diagram": "",
-          "image": "",
-          "filled": true
+          "image": "img/notes/phospholipid-bilayer.jpg"
         },
         {
           "id": "mwlfuym8nla8s",
@@ -289,43 +304,33 @@ export const STARTER = {
           "image": ""
         },
         {
-          "id": "mwlfuym8ph1nr",
-          "title": "Phospholipid bilayer",
-          "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
-          "notes": [
-            "Fluid mosaic model: phospholipids arranged in a bilayer, with globular proteins in between",
-            "Heads (hydrophilic, \"water liker\") face the water on the outside and inside; tails (hydrophobic, \"water hater\") face each other in the middle",
-            "Parts (from my diagram): extrinsic and intrinsic proteins, outside, inside, water liker, water hater"
-          ],
+          "id": "mwlfuym8cnhp8",
+          "title": "Glycolipid",
+          "definition": "A component of the cell surface membrane.",
+          "notes": [],
           "found": "",
           "diagram": "",
-          "image": "img/notes/phospholipid-bilayer.jpg"
-        },
-        {
-          "id": "mwlfuym82b5vq",
-          "title": "Micelle",
-          "definition": "A structure formed by amphipathic molecules.",
-          "notes": [
-            "A ball of phospholipids in water: heads face the water, tails hide in the middle (from my diagram)"
-          ],
-          "found": "",
-          "diagram": "",
-          "image": "img/notes/micelle.jpg",
+          "image": "",
           "filled": true
         },
         {
-          "id": "mwlfuym8u12b5",
-          "title": "Amphipathic molecule",
-          "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
-          "notes": [
-            "Contain both hydrophilic & hydrophobic properties",
-            "Others are steroids and glycolipids",
-            "Phospholipid: head = hydrophilic (polar molecule), tails = hydrophobic (non-polar molecule)"
-          ],
+          "id": "mwlfuym8egiy6",
+          "title": "Glycoprotein",
+          "definition": "A component of the cell surface membrane.",
+          "notes": [],
           "found": "",
           "diagram": "",
-          "image": "img/notes/amphipathic-molecule.jpg"
-        },
+          "image": "",
+          "filled": true
+        }
+      ],
+      "parent": "mwlfuym70tjyw"
+    },
+    {
+      "id": "t-water",
+      "name": "Hydrophilic & hydrophobic",
+      "color": "#0e7490",
+      "entries": [
         {
           "id": "mwlfuym8olj2y",
           "title": "Hydrophilic",
@@ -349,16 +354,34 @@ export const STARTER = {
           "found": "",
           "diagram": "",
           "image": ""
+        },
+        {
+          "id": "mwlfuym8u12b5",
+          "title": "Amphipathic molecule",
+          "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
+          "notes": [
+            "Contain both hydrophilic & hydrophobic properties",
+            "Others are steroids and glycolipids",
+            "Phospholipid: head = hydrophilic (polar molecule), tails = hydrophobic (non-polar molecule)"
+          ],
+          "found": "",
+          "diagram": "",
+          "image": "img/notes/amphipathic-molecule.jpg"
+        },
+        {
+          "id": "mwlfuym82b5vq",
+          "title": "Micelle",
+          "definition": "A structure formed by amphipathic molecules.",
+          "notes": [
+            "A ball of phospholipids in water: heads face the water, tails hide in the middle (from my diagram)"
+          ],
+          "found": "",
+          "diagram": "",
+          "image": "img/notes/micelle.jpg",
+          "filled": true
         }
       ],
-      "parent": "t-euk"
-    },
-    {
-      "id": "mwlg3xh6vd9tx",
-      "name": "Animal-Only Organelles",
-      "color": "#0891b2",
-      "entries": [],
-      "parent": "t-shared"
+      "parent": "mwlfuym70tjyw"
     }
   ]
 };

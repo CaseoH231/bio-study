@@ -93,6 +93,7 @@ img/slides/           diagrams from the lesson slides
 img/ref/              textbook diagrams from Wikimedia Commons (credits in refs.js)
 refs.js               which textbook diagram goes with which note, and who made it
 presets.js            the ready-made topics
+upgrades.js           rearranges saved notes when the starting layout changes (moves only, never edits notes)
 diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline
 tests/                bash tests/run_tests.sh

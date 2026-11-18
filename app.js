@@ -1,5 +1,6 @@
 import { STARTER } from './data.js';
 import { PRESETS } from './presets.js';
+import { organiseHeadstart } from './upgrades.js';
 import { REFS } from './refs.js';
 import { DIAGRAMS, DIAGRAM_WORDS, CELLS, diagramSVG, cellSVG } from './diagrams.js';
 
@@ -73,6 +74,7 @@ function upgradeStarter(d) {
     }
   }
   if (from < 6) splitEukaryotic(d);
+  if (from < 7) organiseHeadstart(d);
   d.starter = STARTER.starter;
   return true;
 }
