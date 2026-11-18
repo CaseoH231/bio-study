@@ -8,14 +8,16 @@ const KEY = 'bio-study-notes-v1';
 const PALETTE = ['#16a34a', '#2563eb', '#db2777', '#d97706', '#7c3aed', '#0891b2', '#dc2626', '#4d7c0f'];
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
+let firstVisit = true; // nothing saved on this device yet – new visitors get the latest published notes
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && Array.isArray(d.topics)) return d;
+    if (d && Array.isArray(d.topics)) { firstVisit = false; return d; }
   } catch { /* first visit or storage blocked */ }
   return clone(STARTER);
 }
 function save() {
+  firstVisit = false;
   try { localStorage.setItem(KEY, JSON.stringify(db)); return true; } catch {
     toast('Could not save – your device storage is full. Try a smaller picture, or download a backup.');
     return false;
@@ -1092,6 +1094,57 @@ $('#file-import').onchange = async (ev) => {
   } catch { toast('That file is not a Bio Study Notes backup.'); }
   $('.more').open = false;
 };
+// ---------- publishing: your notes saved to GitHub, and the starting notes for anyone new ----------
+const fetchPublished = async () => {
+  try {
+    const res = await fetch('api/published', { cache: 'no-store' });
+    const d = res.ok ? await res.json() : null;
+    return d && Array.isArray(d.topics) ? d : null;
+  } catch { return null; }
+};
+async function useLatestForNewVisitor() {
+  if (!firstVisit) return;
+  const d = await fetchPublished();
+  if (!d || !firstVisit) return; // they started making notes meanwhile – keep theirs
+  delete d.publishedAt;
+  db = d; upgradeStarter(db); route();
+}
+$('#btn-publish').onclick = () => {
+  $('.more').open = false;
+  const count = all().length;
+  openDialog(`<div class="dlg-head"><h2 class="grow">Publish my notes</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body"><p>This saves the notes on this device (${plural(count, 'note')} in ${plural(db.topics.length, 'topic')}) to GitHub. That means:</p>
+      <ul><li>they're backed up, with a history of every version,</li><li>Claude can see them when you ask for changes,</li>
+      <li>anyone opening the app for the first time starts with them.</li></ul>
+      <p class="hint">It needs your passcode. People who already use the app keep their own notes.</p></div>
+    <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="pub-go">Publish</button></div>`, 'small');
+  $('#pub-go').onclick = async () => {
+    $('#pub-go').disabled = true; $('#pub-go').textContent = 'Publishing…';
+    const { res, data, cancelled } = await callApi('api/publish', { notes: db });
+    if (cancelled) return dlg.close();
+    if (res?.ok && data.ok) {
+      openDialog(`<div class="dlg-head"><h2 class="grow">Published ✓</h2><button data-close aria-label="Close">✕</button></div>
+        <div class="dlg-body"><p>${plural(data.count, 'note')} saved to GitHub.${data.commit ? ` <a href="${esc(data.commit)}" target="_blank" rel="noopener">See it on GitHub</a>.` : ''}</p></div>
+        <div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
+      return;
+    }
+    const why = { 'not-set-up': 'Publishing isn’t set up yet: the Worker needs a GITHUB_TOKEN and an APP_PASSCODE secret (see the README).',
+      'bad-token': 'GitHub didn’t accept the GITHUB_TOKEN – it may have expired or not have write access to the repository.',
+      passcode: 'Wrong passcode.', 'too-big': 'Your notes are too big to publish in one go.' }[data.error]
+      || (res ? 'Publishing failed – try again in a minute.' : 'Publishing only works on the online site, with an internet connection.');
+    openDialog(`<div class="dlg-head"><h2 class="grow">Couldn’t publish</h2><button data-close aria-label="Close">✕</button></div>
+      <div class="dlg-body"><p>${esc(why)}</p></div><div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
+  };
+};
+$('#btn-latest').onclick = async () => {
+  $('.more').open = false;
+  const d = await fetchPublished();
+  if (!d) return toast('There are no published notes yet (or you’re offline).');
+  if (!confirm(`Replace the notes on this device with the latest published notes${d.publishedAt ? ` (from ${new Date(d.publishedAt).toLocaleDateString()})` : ''}? Download a backup first if you want to keep yours.`)) return;
+  delete d.publishedAt;
+  db = d; upgradeStarter(db); save(); go('#/'); toast('Loaded the latest published notes');
+};
+
 $('#btn-reset').onclick = () => {
   if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;
   db = clone(STARTER); save(); go('#/'); $('.more').open = false;
@@ -1110,3 +1163,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.ser
 
 route();
 checkAI();
+useLatestForNewVisitor();

@@ -9,7 +9,7 @@ types = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html; char
          '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json'}
 files = {}
 for d, dirs, names in os.walk(root):
-    dirs[:] = [x for x in dirs if not x.startswith('.') and x not in ('tests', 'tools', 'node_modules', 'worker')]
+    dirs[:] = [x for x in dirs if not x.startswith('.') and x not in ('tests', 'tools', 'node_modules', 'worker', 'published')]
     for n in names:
         if n in skip or n.startswith('.'):
             continue

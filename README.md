@@ -56,6 +56,20 @@ Settings → Variables and Secrets, add a **Secret** `OWNER_IPS` with the value 
 (so you can still use them at school, or when your home address changes – home addresses change from time to time).
 Friends then don't see the AI buttons at all.
 
+## Publishing your notes (owner only)
+
+**Backup & reset → Publish my notes…** saves the notes on your device to this repository as `published/notes.json`
+(backed up with full history, and visible to Claude), and makes them the starting notes for anyone opening the app for
+the first time. It always asks for the passcode, so friends pressing it can't do anything. Friends who already use the
+app keep their own notes; **Get the latest published notes** swaps theirs for yours if they want.
+
+**One-time set-up:**
+1. GitHub → your profile picture → **Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+   Generate new token**. Name it "bio-study publish", pick an expiry, **Repository access: Only select repositories →
+   bio-study**, and under **Repository permissions** set **Contents** to **Read and write**. Generate it and copy it.
+2. Cloudflare → **Workers & Pages → bio-study → Settings → Variables and Secrets → Add**: type **Secret**, name
+   `GITHUB_TOKEN`, value: the token. (`APP_PASSCODE` must be set too – that's the passcode it asks for.)
+
 ## Run it on your computer
 Open the folder in VS Code → right-click `index.html` → **Open with Live Server**.
 
