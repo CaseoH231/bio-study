@@ -695,12 +695,14 @@ async function readNotes(files) {
     if (!p) { dlg.close(); return; }
     setPasscode(p.trim());
   }
-  if (res?.ok && data.plan) return reviewPlan(data.plan, pages);
+  if (res?.ok && data.plan) return reviewPlan(data.plan, pages, data.reader);
   const why = {
-    'not-set-up': 'Scanning isn’t switched on yet: an Anthropic API key and a passcode need adding to the Worker in Cloudflare (see the README).',
+    'not-set-up': 'Scanning isn’t switched on for this site yet (see the README).',
+    'daily-limit': 'You’ve used today’s free scanning allowance (about 50 pages). It resets tomorrow.',
     'bad-key': 'The Anthropic API key saved in Cloudflare isn’t working – check it there.',
     busy: 'The note reader is busy right now. Try again in a minute.',
     refused: 'The note reader couldn’t process these photos.',
+    'no-plan': 'The note reader couldn’t make sense of those photos. Try a clearer, closer photo of one page.',
     'too-long': 'That was too much to read in one go – try fewer pages at a time.',
     'too-big': 'Those photos are too big together – try fewer pages at a time.',
     passcode: 'Wrong passcode.',
@@ -710,8 +712,18 @@ async function readNotes(files) {
     <div class="dlg-body"><p>${esc(why)}</p></div><div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
 }
 
-// Show what Claude found, let you untick or rename things, then add it all.
-function reviewPlan(plan, pages) {
+// Note names written slightly differently should still match: "Golgi bodies / complex" = "Golgi body",
+// "Ribosome" = "Ribosomes", "ER" = "Endoplasmic reticulum (ER)", "Cyto skeleton" = "Cytoskeleton".
+const single = (w) => w.replace(/ies$/, 'y').replace(/(ch|sh|x|ss)es$/, '$1').replace(/([^s])s$/, '$1');
+function nameKeys(title) {
+  const t = title.toLowerCase();
+  const parts = [t.split(/[/(]/)[0], ...[...t.matchAll(/\(([^)]+)\)/g)].map((m) => m[1])];
+  return new Set(parts.map((x) => x.split(/[^a-z]+/).filter(Boolean).map(single).join('')).filter(Boolean));
+}
+const sameNote = (a, b) => [...nameKeys(a)].some((k) => nameKeys(b).has(k));
+
+// Show what was found, let you untick or rename things, then add it all.
+function reviewPlan(plan, pages, reader) {
   const known = new Set(db.topics.map((t) => t.id));
   const fresh = (plan.new_topics || []).filter((nt) => nt.key && nt.name && !known.has(nt.key));
   const keys = new Set(fresh.map((nt) => nt.key));
@@ -731,12 +743,12 @@ function reviewPlan(plan, pages) {
     seen.add(id);
     return (nt.parent ? pathTo(nt.parent, seen) + ' › ' : '') + nt.name;
   };
-  const existingNote = (n) => known.has(n.topic) && topicOf(n.topic).entries.find((e) => e.title.toLowerCase() === n.title.trim().toLowerCase());
+  const existingNote = (n) => known.has(n.topic) && topicOf(n.topic).entries.find((e) => sameNote(e.title, n.title));
 
   openDialog(`
     <div class="dlg-head"><h2 class="grow">Check before adding</h2><button data-close aria-label="Close">✕</button></div>
     <div class="dlg-body form">
-      <p class="hint">${esc(plan.summary || '')}</p>
+      <p class="hint">${esc(plan.summary || '')}${reader === 'free' ? '<br><small>Read by the free reader – check the spelling and wording as you go.</small>' : ''}</p>
       ${plan.unreadable?.length ? `<p class="hint warnbox"><b>Couldn’t read for sure:</b> ${plan.unreadable.map(esc).join(' · ')}</p>` : ''}
       ${fresh.length ? `<h4 class="sect">New topics <small>– rename them if you like</small></h4>
         <div class="plan-topics">${fresh.map((nt) => `<label><span class="chip new">New</span>
@@ -784,7 +796,7 @@ function reviewPlan(plan, pages) {
       first = first || t.id;
       const points = (n.key_points || []).map((k) => k.trim()).filter(Boolean);
       const diagram = n.diagram && n.diagram !== 'none' ? n.diagram : '';
-      const old = t.entries.find((e) => e.title.toLowerCase() === n.title.trim().toLowerCase());
+      const old = t.entries.find((e) => sameNote(e.title, n.title));
       if (old) {
         if (!old.definition && n.definition) { old.definition = n.definition; if (n.filled) old.filled = true; }
         old.notes = [...(old.notes || []), ...points.filter((k) => !(old.notes || []).includes(k))];

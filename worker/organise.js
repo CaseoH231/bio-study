@@ -1,10 +1,13 @@
-// POST /api/organise – reads photos of handwritten notes with Claude and returns a plan:
-// which notes to make, what they say, and which topic (existing or new) each one goes in.
-// The app shows the plan for checking before anything is saved.
+// POST /api/organise – reads photos of handwritten notes and returns a plan: which notes to make,
+// what they say, and which topic (existing or new) each one goes in. The app shows the plan for checking
+// before anything is saved.
 //
-// Needs two Cloudflare secrets on the Worker (Settings → Variables and Secrets):
-//   ANTHROPIC_API_KEY  – an API key from console.anthropic.com
-//   APP_PASSCODE       – the passcode the app asks for, so strangers can't use up the API credit
+// Two readers:
+//   • Free (default): Cloudflare Workers AI, Google's Gemma 4 model, through the Worker's AI binding.
+//     Free plan = 10,000 "neurons" a day (roughly 50 pages); it simply stops for the day after that, never charges.
+//     The passcode is optional here (set APP_PASSCODE if you want one).
+//   • Claude (optional, paid): used instead when the Worker has an ANTHROPIC_API_KEY secret.
+//     Then APP_PASSCODE is required, so strangers can't use up the API credit.
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod/v4'; // the SDK's helper uses Zod 4
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
@@ -46,14 +49,101 @@ unreadable: anything you couldn't read or weren't sure about, so the student can
 
 Ignore page furniture such as the subject name at the top, dates and doodles.`;
 
+const FREE_MODEL = '@cf/google/gemma-4-26b-a4b-it';
+
+// Extra guidance for the free model, which needs a worked example to follow the rules closely.
+const FREE_EXTRA = `
+Follow these closely:
+- Every line the student wrote must end up in that note's definition or key_points. Don't drop any lines and don't add your own.
+- The definition says what the thing IS or DOES (its job), e.g. "Site of aerobic respiration, which releases energy as ATP." Never a fact about the word itself.
+- filled is false whenever the definition comes from the page. It is true only for things the page merely names.
+- If a heading gives several names ("Golgi bodies / complex / apparatus"), the title is the main singular name ("Golgi body") and a key point says "Also called the Golgi complex or Golgi apparatus".
+- Short related lines under a heading (like "exocytosis – exo = exit, cyt = cell" under Lysosomes) are key points of that heading, not new notes.
+- Topic names start with a capital letter.
+
+Example. A page reads:
+  Mitochondria – plural, Mitochondrion – singular
+  - RELEASES energy – ATP
+  - "Jiggly wiggly's" is cristae
+  Organelles: Nucleus, Ribosome
+Good notes:
+  {"title":"Mitochondria","definition":"Release energy for the cell, as ATP.","key_points":["Mitochondria = plural, mitochondrion = singular","RELEASES energy – ATP","The “jiggly wiggly” folds are the cristae"],"filled":false, ...}
+  {"title":"Nucleus","definition":"Contains the cell's DNA and controls the cell's activities.","key_points":[],"filled":true, ...}
+  {"title":"Ribosome","definition":"Where proteins are made.","key_points":[],"filled":true, ...}`;
+
+// If the model didn't pick a built-in diagram, match one from the note's name.
+const DIAGRAM_WORDS = [
+  [/nucle(us|i)\b/i, 'nucleus'], [/mitochond/i, 'mitochondria'], [/chloroplast/i, 'chloroplast'], [/ribosom/i, 'ribosome'],
+  [/(cell|plasma|surface) membrane/i, 'membrane'], [/cell wall/i, 'wall'], [/vacuole/i, 'vacuole'], [/cytoplasm/i, 'cytoplasm'],
+  [/endoplasmic|\b[rs]?er\b/i, 'er'], [/golgi/i, 'golgi'], [/lysosom/i, 'lysosome'], [/plasmodesm/i, 'plasmodesmata'],
+  [/peroxisom/i, 'peroxisome'], [/cyto ?skelet/i, 'cytoskeleton'], [/plasmid/i, 'plasmid'],
+];
+const guessDiagram = (title) => DIAGRAM_WORDS.find(([re]) => re.test(title))?.[1] || 'none';
+const capital = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+// Turn whatever the model sent back into a well-formed plan (free models don't always follow the schema exactly).
+const str = (v) => (typeof v === 'string' ? v.trim() : v == null ? '' : String(v));
+const num = (v) => (Number.isFinite(+v) ? +v : NaN);
+export function tidyPlan(raw) {
+  const o = raw && typeof raw === 'object' ? raw : {};
+  const drawing = (d) => {
+    if (!d || typeof d !== 'object') return null;
+    const b = { page: num(d.page) || 1, x0: num(d.x0), y0: num(d.y0), x1: num(d.x1), y1: num(d.y1) };
+    return [b.x0, b.y0, b.x1, b.y1].every(Number.isFinite) ? b : null;
+  };
+  return {
+    summary: str(o.summary),
+    new_topics: (Array.isArray(o.new_topics) ? o.new_topics : []).map((t) => ({ key: str(t?.key), name: capital(str(t?.name)), parent: t?.parent ? str(t.parent) : null }))
+      .filter((t) => t.key && t.name),
+    notes: (Array.isArray(o.notes) ? o.notes : []).map((n) => ({
+      topic: str(n?.topic), title: str(n?.title), definition: str(n?.definition),
+      key_points: (Array.isArray(n?.key_points) ? n.key_points : []).map(str).filter(Boolean),
+      found_in: str(n?.found_in), diagram: DIAGRAM_KEYS.includes(n?.diagram) && n.diagram !== 'none' ? n.diagram : guessDiagram(str(n?.title)),
+      filled: n?.filled === true && !!str(n?.definition), drawing: drawing(n?.drawing),
+    })).filter((n) => n.title),
+    unreadable: (Array.isArray(o.unreadable) ? o.unreadable : []).map(str).filter(Boolean),
+  };
+}
+// Pull the JSON object out of a model's reply (it may be wrapped in ```json fences or have words around it).
+export function readJSON(reply) {
+  if (reply && typeof reply === 'object') return reply;
+  const text = String(reply || '');
+  const start = text.indexOf('{'), end = text.lastIndexOf('}');
+  if (start < 0 || end <= start) return null;
+  try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+}
+
+async function readWithWorkersAI(env, images, ask) {
+  const content = images.flatMap((im, i) => [
+    { type: 'text', text: `Page ${i + 1}:` },
+    { type: 'image_url', image_url: { url: `data:${im.media_type};base64,${im.data}` } },
+  ]);
+  content.push({ type: 'text', text: ask });
+  const out = await env.AI.run(FREE_MODEL, {
+    messages: [
+      { role: 'system', content: `${SYSTEM}\n${FREE_EXTRA}\n\nReply with one JSON object only, with exactly these fields: summary, new_topics, notes, unreadable.` },
+      { role: 'user', content },
+    ],
+    response_format: { type: 'json_schema', json_schema: { name: 'plan', schema: z.toJSONSchema(Plan), strict: true } },
+    max_completion_tokens: 6000,
+    temperature: 0.2,
+    chat_template_kwargs: { enable_thinking: false }, // long "thinking" made requests time out
+  });
+  const reply = out?.choices?.[0]?.message?.content ?? out?.response;
+  const raw = readJSON(reply);
+  return raw ? tidyPlan(raw) : null;
+}
+
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function organise(request, env) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
-  // Both secrets are needed: without a passcode anyone could use up the API credit.
-  if (!env.ANTHROPIC_API_KEY || !env.APP_PASSCODE) return json({ error: 'not-set-up' }, 503);
-  if (request.headers.get('x-passcode') !== env.APP_PASSCODE) return json({ error: 'passcode' }, 401);
+  const useClaude = !!env.ANTHROPIC_API_KEY;
+  if (!useClaude && !env.AI) return json({ error: 'not-set-up' }, 503);
+  // Claude costs money, so it needs a passcode; the free reader only needs one if you've set it.
+  if (useClaude && !env.APP_PASSCODE) return json({ error: 'not-set-up' }, 503);
+  if (env.APP_PASSCODE && request.headers.get('x-passcode') !== env.APP_PASSCODE) return json({ error: 'passcode' }, 401);
   if (Number(request.headers.get('content-length') || 0) > 25e6) return json({ error: 'too-big' }, 413);
 
   let body;
@@ -64,11 +154,25 @@ export async function organise(request, env) {
   }
   const tree = Array.isArray(body.tree) ? body.tree.slice(0, 300) : [];
 
+  const ask = `Topics already in the app:\n${JSON.stringify(tree)}\n\nOrganise the notes in ${images.length === 1 ? 'this photo' : `these ${images.length} photos`}.`;
+
+  if (!useClaude) {
+    try {
+      const plan = await readWithWorkersAI(env, images, ask);
+      if (!plan || (!plan.notes.length && !plan.summary)) return json({ error: 'no-plan' }, 502);
+      return json({ plan, reader: 'free', model: FREE_MODEL });
+    } catch (err) {
+      const msg = String(err?.message || err);
+      if (/neuron|allocation|3036|quota|limit/i.test(msg)) return json({ error: 'daily-limit' }, 429);
+      return json({ error: 'failed', detail: msg }, 500);
+    }
+  }
+
   const content = images.flatMap((im, i) => [
     { type: 'text', text: `Page ${i + 1}:` },
     { type: 'image', source: { type: 'base64', media_type: im.media_type, data: im.data } },
   ]);
-  content.push({ type: 'text', text: `Topics already in the app:\n${JSON.stringify(tree)}\n\nOrganise the notes in ${images.length === 1 ? 'this photo' : `these ${images.length} photos`}.` });
+  content.push({ type: 'text', text: ask });
 
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
   try {
@@ -84,7 +188,7 @@ export async function organise(request, env) {
     if (msg.stop_reason === 'refusal') return json({ error: 'refused' }, 422);
     if (msg.stop_reason === 'max_tokens') return json({ error: 'too-long' }, 422);
     if (!msg.parsed_output) return json({ error: 'no-plan' }, 502);
-    return json({ plan: msg.parsed_output, model: msg.model });
+    return json({ plan: msg.parsed_output, reader: 'claude', model: msg.model });
   } catch (err) {
     if (err instanceof Anthropic.AuthenticationError) return json({ error: 'bad-key' }, 500);
     if (err instanceof Anthropic.RateLimitError) return json({ error: 'busy' }, 429);

@@ -24,13 +24,16 @@ Live at **https://bio-study.adrian11jonker.workers.dev**
 each thing you wrote about, puts each one in the right topic (making new topics or sub-topics only when nothing fits, and adding to notes
 you already have), and cuts out diagrams you drew. You check everything on a review screen before it's added.
 
-It uses Claude (Anthropic's AI) through this site's Worker, so it needs two secrets on the Worker. **One-time set-up:**
-1. Get an API key: https://console.anthropic.com → **API keys → Create key**, and add a little credit under **Billing**.
-   Each page costs roughly 5–10 US cents.
-2. Cloudflare → **Workers & Pages → bio-study → Settings → Variables and Secrets → Add**:
-   - Type **Secret**, name `ANTHROPIC_API_KEY`, value: the key from step 1.
-   - Type **Secret**, name `APP_PASSCODE`, value: any passcode you like (stops strangers using your credit).
-3. Open the app, press **Scan notes**; it asks for the passcode once and remembers it on that device.
+**It's free** – no account or key needed. It uses Google's Gemma 4 model through Cloudflare Workers AI, which comes
+with the Worker: about 50 pages a day for free (10,000 "neurons" a day). When that runs out it just says to try again
+tomorrow – the free plan never charges. Check the notes on the review screen; it occasionally skips a line.
+
+*Optional:* to stop other people using your daily allowance, add a Worker secret `APP_PASSCODE` (Cloudflare →
+**Workers & Pages → bio-study → Settings → Variables and Secrets → Add**, type Secret). The app then asks for it once per device.
+
+*Optional, paid:* adding a Worker secret `ANTHROPIC_API_KEY` (from console.anthropic.com, roughly 5–10 US cents a page)
+switches scanning to Claude, which reads more carefully and writes definitions for things you only named.
+`APP_PASSCODE` is then required.
 
 Scanning only works on the online site (not with Live Server). The code is in `worker/organise.js`.
 
@@ -60,6 +63,6 @@ diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline
 tests/                bash tests/run_tests.sh
 tools/                build_bio_worker.py (deploy without GitHub)
-worker/               the Worker: serves the site and /api/organise (reads photos of notes with Claude)
+worker/               the Worker: serves the site and /api/organise (reads photos of notes: free Gemma 4, or Claude)
 package.json          the Worker's libraries (npm install)
 ```

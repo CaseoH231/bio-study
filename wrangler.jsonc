@@ -4,6 +4,8 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Cloudflare's own AI models (the free note reader).
+  "ai": { "binding": "AI" },
   "assets": {
     // The site: every file in this folder is served as-is (see .assetsignore for what's left out).
     "directory": ".",
