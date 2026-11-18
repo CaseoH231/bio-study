@@ -3,26 +3,39 @@
  "starter": 7,
  "topics": [
   {
-   "id": "t-headstart",
-   "name": "Headstart",
+   "id": "personal",
+   "name": "Personal",
+   "color": "#0f766e",
+   "entries": []
+  },
+  {
+   "id": "owner-notes",
+   "name": "Donut-Man's notes",
    "color": "#7c3aed",
    "entries": []
   },
   {
-   "id": "t-celltypes",
+   "id": "dm-t-headstart",
+   "name": "Headstart",
+   "color": "#7c3aed",
+   "entries": [],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "dm-t-celltypes",
    "name": "Cell types",
    "color": "#be123c",
    "entries": [],
-   "parent": "t-headstart"
+   "parent": "dm-t-headstart"
   },
   {
-   "id": "t-animal",
-   "parent": "t-celltypes",
+   "id": "dm-t-animal",
+   "parent": "dm-t-celltypes",
    "name": "Eukaryotic cells",
    "color": "#be123c",
    "entries": [
     {
-     "id": "e-animalcell",
+     "id": "dm-e-animalcell",
      "title": "Animal cell",
      "diagram": "animalcell",
      "image": "img/animal-cell.jpg",
@@ -34,7 +47,7 @@
      ]
     },
     {
-     "id": "e-plantcell",
+     "id": "dm-e-plantcell",
      "title": "Plant cell",
      "diagram": "plantcell",
      "found": "Plant",
@@ -45,27 +58,27 @@
    ]
   },
   {
-   "id": "t-prok",
-   "parent": "t-celltypes",
+   "id": "dm-t-prok",
+   "parent": "dm-t-celltypes",
    "name": "Prokaryotic cells",
    "color": "#b45309",
    "entries": []
   },
   {
-   "id": "t-shared",
-   "parent": "t-headstart",
+   "id": "dm-t-shared",
+   "parent": "dm-t-headstart",
    "name": "Organelles",
    "color": "#2563eb",
    "entries": []
   },
   {
-   "id": "t-euk",
-   "parent": "t-shared",
+   "id": "dm-t-euk",
+   "parent": "dm-t-shared",
    "name": "In all eukaryotic cells",
    "color": "#0891b2",
    "entries": [
     {
-     "id": "e-nucleus",
+     "id": "dm-e-nucleus",
      "title": "Nucleus",
      "diagram": "nucleus",
      "found": "Plant, Animal",
@@ -79,7 +92,7 @@
      "imageCaption": "From the lesson slides (slide 19)"
     },
     {
-     "id": "e-mito",
+     "id": "dm-e-mito",
      "title": "Mitochondria",
      "diagram": "mitochondria",
      "image": "img/mitochondria.jpg",
@@ -96,7 +109,7 @@
      ]
     },
     {
-     "id": "e-er",
+     "id": "dm-e-er",
      "title": "Endoplasmic reticulum (ER)",
      "diagram": "er",
      "image": "img/er.jpg",
@@ -109,7 +122,7 @@
      ]
     },
     {
-     "id": "e-golgi",
+     "id": "dm-e-golgi",
      "title": "Golgi body",
      "diagram": "golgi",
      "image": "img/golgi.jpg",
@@ -127,7 +140,7 @@
      ]
     },
     {
-     "id": "e-ribo",
+     "id": "dm-e-ribo",
      "title": "Ribosomes",
      "diagram": "ribosome",
      "image": "img/ribosome.jpg",
@@ -139,7 +152,7 @@
      ]
     },
     {
-     "id": "e-perox",
+     "id": "dm-e-perox",
      "title": "Peroxisomes",
      "diagram": "peroxisome",
      "found": "Plant, Animal",
@@ -148,7 +161,7 @@
      "notes": []
     },
     {
-     "id": "e-cytoskel",
+     "id": "dm-e-cytoskel",
      "title": "Cytoskeleton",
      "diagram": "cytoskeleton",
      "found": "Plant, Animal",
@@ -159,13 +172,13 @@
    ]
   },
   {
-   "id": "t-plant",
-   "parent": "t-shared",
+   "id": "dm-t-plant",
+   "parent": "dm-t-shared",
    "name": "Plant cells only",
    "color": "#16a34a",
    "entries": [
     {
-     "id": "e-wall",
+     "id": "dm-e-wall",
      "title": "Cell wall",
      "diagram": "wall",
      "found": "Plant only",
@@ -177,7 +190,7 @@
      ]
     },
     {
-     "id": "e-chloro",
+     "id": "dm-e-chloro",
      "title": "Chloroplasts",
      "diagram": "chloroplast",
      "found": "Plant only",
@@ -188,7 +201,7 @@
      ]
     },
     {
-     "id": "e-vacuole",
+     "id": "dm-e-vacuole",
      "title": "Large central vacuole",
      "diagram": "vacuole",
      "found": "Plant only",
@@ -201,7 +214,7 @@
      ]
     },
     {
-     "id": "e-plasmo",
+     "id": "dm-e-plasmo",
      "title": "Plasmodesmata",
      "diagram": "plasmodesmata",
      "found": "Plant only",
@@ -213,12 +226,12 @@
    ]
   },
   {
-   "id": "mwlg3xh6vd9tx",
+   "id": "dm-mwlg3xh6vd9tx",
    "name": "Animal cells only",
    "color": "#0891b2",
    "entries": [
     {
-     "id": "e-lyso",
+     "id": "dm-e-lyso",
      "title": "Lysosomes",
      "diagram": "lysosome",
      "image": "img/lysosome.jpg",
@@ -232,22 +245,22 @@
      ]
     }
    ],
-   "parent": "t-shared"
+   "parent": "dm-t-shared"
   },
   {
-   "id": "mwlfuym70tjyw",
+   "id": "dm-mwlfuym70tjyw",
    "name": "Plasma membrane",
    "color": "#7c3aed",
    "entries": [],
-   "parent": "t-headstart"
+   "parent": "dm-t-headstart"
   },
   {
-   "id": "t-membrane",
+   "id": "dm-t-membrane",
    "name": "Membrane structure",
    "color": "#7c3aed",
    "entries": [
     {
-     "id": "mwlfuym7vx7dm",
+     "id": "dm-mwlfuym7vx7dm",
      "title": "Plasma membrane",
      "definition": "The cell surface membrane.",
      "notes": [
@@ -263,7 +276,7 @@
      "image": "img/notes/phospholipid-bilayer.jpg"
     },
     {
-     "id": "mwlfuym8ph1nr",
+     "id": "dm-mwlfuym8ph1nr",
      "title": "Phospholipid bilayer",
      "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
      "notes": [
@@ -276,7 +289,7 @@
      "image": "img/notes/phospholipid-bilayer.jpg"
     },
     {
-     "id": "mwlfuym8nla8s",
+     "id": "dm-mwlfuym8nla8s",
      "title": "Integral protein",
      "definition": "A protein that goes all the way through both layers of the membrane.",
      "notes": [
@@ -287,7 +300,7 @@
      "image": ""
     },
     {
-     "id": "mwlfuym8qccqj",
+     "id": "dm-mwlfuym8qccqj",
      "title": "Extrinsic protein",
      "definition": "A protein that goes part of the way into the membrane, through 1 layer.",
      "notes": [
@@ -298,7 +311,7 @@
      "image": ""
     },
     {
-     "id": "mwlfuym8cnhp8",
+     "id": "dm-mwlfuym8cnhp8",
      "title": "Glycolipid",
      "definition": "A component of the cell surface membrane.",
      "notes": [],
@@ -308,7 +321,7 @@
      "filled": true
     },
     {
-     "id": "mwlfuym8egiy6",
+     "id": "dm-mwlfuym8egiy6",
      "title": "Glycoprotein",
      "definition": "A component of the cell surface membrane.",
      "notes": [],
@@ -318,15 +331,15 @@
      "filled": true
     }
    ],
-   "parent": "mwlfuym70tjyw"
+   "parent": "dm-mwlfuym70tjyw"
   },
   {
-   "id": "t-water",
+   "id": "dm-t-water",
    "name": "Hydrophilic & hydrophobic",
    "color": "#0e7490",
    "entries": [
     {
-     "id": "mwlfuym8olj2y",
+     "id": "dm-mwlfuym8olj2y",
      "title": "Hydrophilic",
      "definition": "Water-loving (\"water liker\").",
      "notes": [
@@ -338,7 +351,7 @@
      "image": ""
     },
     {
-     "id": "mwlfuym8mqmuc",
+     "id": "dm-mwlfuym8mqmuc",
      "title": "Hydrophobic",
      "definition": "Water-hating (\"water hater\").",
      "notes": [
@@ -350,7 +363,7 @@
      "image": ""
     },
     {
-     "id": "mwlfuym8u12b5",
+     "id": "dm-mwlfuym8u12b5",
      "title": "Amphipathic molecule",
      "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
      "notes": [
@@ -363,7 +376,7 @@
      "image": "img/notes/amphipathic-molecule.jpg"
     },
     {
-     "id": "mwlfuym82b5vq",
+     "id": "dm-mwlfuym82b5vq",
      "title": "Micelle",
      "definition": "A structure formed by amphipathic molecules.",
      "notes": [
@@ -375,8 +388,27 @@
      "filled": true
     }
    ],
-   "parent": "mwlfuym70tjyw"
+   "parent": "dm-mwlfuym70tjyw"
+  },
+  {
+   "id": "mwlqwluax4xpu",
+   "name": "test",
+   "color": "#0891b2",
+   "entries": [
+    {
+     "id": "mwlqwwy66st9i",
+     "title": "test",
+     "definition": "test",
+     "found": "test",
+     "notes": [
+      "test"
+     ],
+     "diagram": "",
+     "image": "",
+     "color": ""
+    }
+   ]
   }
  ],
- "publishedAt": "2026-11-18T06:22:51.799Z"
+ "publishedAt": "2026-11-18T06:34:09.747Z"
 }
