@@ -11,6 +11,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod/v4'; // the SDK's helper uses Zod 4
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+import { access, refuse } from './access.js';
 
 // Built-in diagrams the app can attach to a note (same keys as diagrams.js).
 const DIAGRAM_KEYS = ['nucleus', 'mitochondria', 'chloroplast', 'ribosome', 'membrane', 'wall', 'vacuole', 'cytoplasm', 'er',
@@ -49,7 +50,7 @@ unreadable: anything you couldn't read or weren't sure about, so the student can
 
 Ignore page furniture such as the subject name at the top, dates and doodles.`;
 
-const FREE_MODEL = '@cf/google/gemma-4-26b-a4b-it';
+export const FREE_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 
 // Extra guidance for the free model, which needs a worked example to follow the rules closely.
 const FREE_EXTRA = `
@@ -134,16 +135,17 @@ async function readWithWorkersAI(env, images, ask) {
   return raw ? tidyPlan(raw) : null;
 }
 
-const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+export const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function organise(request, env) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
   const useClaude = !!env.ANTHROPIC_API_KEY;
   if (!useClaude && !env.AI) return json({ error: 'not-set-up' }, 503);
-  // Claude costs money, so it needs a passcode; the free reader only needs one if you've set it.
-  if (useClaude && !env.APP_PASSCODE) return json({ error: 'not-set-up' }, 503);
-  if (env.APP_PASSCODE && request.headers.get('x-passcode') !== env.APP_PASSCODE) return json({ error: 'passcode' }, 401);
+  const who = access(request, env);
+  // Claude costs money, so it must be locked to the owner (OWNER_IPS or APP_PASSCODE); the free reader only if you've set one.
+  if (useClaude && !who.locked) return json({ error: 'not-set-up' }, 503);
+  if (!who.owner) return refuse(who, json);
   if (Number(request.headers.get('content-length') || 0) > 25e6) return json({ error: 'too-big' }, 413);
 
   let body;

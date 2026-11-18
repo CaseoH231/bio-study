@@ -37,6 +37,25 @@ switches scanning to Claude, which reads more carefully and writes definitions f
 
 Scanning only works on the online site (not with Live Server). The code is in `worker/organise.js`.
 
+## Study helper (✦ Ask)
+
+The **✦ Ask** button (bottom right) opens a chat. Ask about your notes ("What does the Golgi body do?"), or ask it to change
+them ("make a Cell transport topic inside Headstart with notes on diffusion and osmosis", "move Lysosomes into Shared",
+"quiz me on animal cells"). It shows the changes it suggests and **nothing changes until you press Do it**. It uses the same
+free model as scanning (Gemma 4 on Cloudflare), so it's free; it can't change the app itself – for that, ask Claude in Claude Code.
+
+## Sharing the link with friends
+
+Everyone who opens the link (or installs it as an app) gets **their own separate notes**, saved only in their own browser.
+Nothing anyone writes is uploaded, so friends can't change your notes and you can't change theirs. They start with the
+notebook notes in `data.js`.
+
+The AI features (scanning and the study helper) use your free daily allowance, so you can lock them to your laptop:
+**Backup & reset → This device & AI features** shows your internet address. In Cloudflare → Workers & Pages → bio-study →
+Settings → Variables and Secrets, add a **Secret** `OWNER_IPS` with the value it shows, and a **Secret** `APP_PASSCODE`
+(so you can still use them at school, or when your home address changes – home addresses change from time to time).
+Friends then don't see the AI buttons at all.
+
 ## Run it on your computer
 Open the folder in VS Code → right-click `index.html` → **Open with Live Server**.
 
@@ -63,6 +82,7 @@ diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline
 tests/                bash tests/run_tests.sh
 tools/                build_bio_worker.py (deploy without GitHub)
-worker/               the Worker: serves the site and /api/organise (reads photos of notes: free Gemma 4, or Claude)
+worker/               the Worker: the site plus /api/organise (photos of notes), /api/assistant (study helper),
+                      /api/whoami; access.js = who may use the AI features (OWNER_IPS / APP_PASSCODE)
 package.json          the Worker's libraries (npm install)
 ```

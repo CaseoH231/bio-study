@@ -20,7 +20,7 @@
       <input id="search" type="search" placeholder="Search your notes…" aria-label="Search your notes">
       <nav id="topics" aria-label="Topics"></nav>
       <div class="side-tools">
-        <button id="btn-scan"><span>📷</span>Scan notes</button>
+        <button id="btn-scan" class="ai-only"><span>📷</span>Scan notes</button>
         <button id="btn-cards"><span>✦</span>Flashcards</button>
         <button id="btn-paste"><span>✎</span>Paste notes</button>
         <button id="btn-install" hidden><span>⤓</span>Install app</button>
@@ -30,6 +30,7 @@
             <button id="btn-export">Download a backup</button>
             <button id="btn-import">Load a backup…</button>
             <button id="btn-reset">Reset to my notebook notes</button>
+            <button id="btn-device">This device &amp; AI features</button>
             <input id="file-import" type="file" accept=".json,application/json" hidden>
           </div>
         </details>
@@ -37,6 +38,12 @@
     </aside>
     <main id="main"></main>
   </div>
+  <button id="bot-btn" class="ai-only" aria-label="Open the study helper"><span>✦</span> Ask</button>
+  <section id="bot" hidden aria-label="Study helper">
+    <div class="bot-head"><b>✦ Study helper</b><small>Changes only happen when you press “Do it”</small><button id="bot-close" aria-label="Close">✕</button></div>
+    <div id="bot-msgs" aria-live="polite"></div>
+    <form id="bot-form"><textarea id="bot-input" rows="2" placeholder="Ask about your notes, or ask me to change them…"></textarea><button class="primary" aria-label="Send">➤</button></form>
+  </section>
   <dialog id="dlg"></dialog>
   <div id="toast" role="status"></div>
   <script type="module" src="app.js"></script>

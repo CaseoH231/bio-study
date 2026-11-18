@@ -38,6 +38,7 @@ const path = require('path');
         { topic: 'nonsense', title: 'Stray', definition: 'Somewhere.', key_points: [], found_in: '', diagram: 'none', filled: true, drawing: null },
       ] } } });
   });
+  await p.route('**/api/whoami', (route) => route.fulfill({ json: { owner: true, ai: true, locked: false, hasPasscode: false } }));
   await p.goto('http://localhost:8766/');
   await p.click('#btn-scan');
   await p.setInputFiles('#scan-files', path.join(__dirname, '..', 'img', 'er.jpg'));

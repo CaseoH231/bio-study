@@ -162,7 +162,7 @@ function dashboard() {
   return `<div class="bar"><h2>Dashboard</h2><div class="tools"><button data-act="new-topic">+ New topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
     <section class="hero"><div class="hello"><h2>${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</h2>
       <p>${notes.length ? `You have ${notes.length} notes across ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}. Ready for a quick quiz?` : 'Add your first notes, or pick a ready-made topic.'}</p>
-      <div class="row"><button class="primary" data-act="scan">📷 Scan a photo of my notes</button>${notes.length ? '<button data-act="cards">Start flashcards</button>' : ''}</div></div>
+      <div class="row"><button class="primary ai-only" data-act="scan">📷 Scan a photo of my notes</button>${notes.length ? '<button data-act="cards">Start flashcards</button>' : ''}</div></div>
       <div class="hero-art">${cellSVG('plant')}<small>Click a part of the cell</small></div></section>
     <div class="stats">${stat(notes.length, 'notes')}${stat(db.topics.length, 'topics')}${stat(figs, 'with a diagram')}${stat(points, 'key points')}${stat(db.rounds || 0, 'flashcard rounds done')}</div>
     <h3 class="sect-h">Topics</h3>
@@ -621,6 +621,22 @@ const PASS_KEY = 'bio-study-passcode';
 const passcode = () => { try { return localStorage.getItem(PASS_KEY) || ''; } catch { return ''; } };
 const setPasscode = (v) => { try { localStorage.setItem(PASS_KEY, v); } catch { /* asked again next time */ } };
 
+// POST to one of the Worker's /api/ endpoints. Asks for the passcode if the Worker wants one (and remembers it).
+async function callApi(path, body) {
+  let res = null, data = {};
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-passcode': passcode() }, body: JSON.stringify(body) });
+      data = await res.json().catch(() => ({}));
+    } catch { res = null; }
+    if (res?.status !== 401) break;
+    const p = prompt(attempt ? 'That passcode didn’t work. Try again:' : 'Enter the passcode for the AI features:');
+    if (!p) return { res, data, cancelled: true };
+    setPasscode(p.trim());
+  }
+  return { res, data, cancelled: false };
+}
+
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -684,17 +700,8 @@ async function readNotes(files) {
   const tree = treeOrder().map(({ t }) => ({ id: t.id, name: t.name, parent: t.parent || null, notes: t.entries.map((e) => e.title) }));
   busy(`Reading ${plural(pages.length, 'page')} of handwriting and sorting it into topics. This usually takes under a minute.`);
 
-  let res, data = {};
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      res = await fetch('api/organise', { method: 'POST', headers: { 'content-type': 'application/json', 'x-passcode': passcode() }, body: JSON.stringify({ images, tree }) });
-      data = await res.json().catch(() => ({}));
-    } catch { res = null; }
-    if (res?.status !== 401) break;
-    const p = prompt(attempt ? 'That passcode didn’t work. Try again:' : 'Enter the passcode for scanning notes:');
-    if (!p) { dlg.close(); return; }
-    setPasscode(p.trim());
-  }
+  const { res, data, cancelled } = await callApi('api/organise', { images, tree });
+  if (cancelled) { dlg.close(); return; }
   if (res?.ok && data.plan) return reviewPlan(data.plan, pages, data.reader);
   const why = {
     'not-set-up': 'Scanning isn’t switched on for this site yet (see the README).',
@@ -706,6 +713,7 @@ async function readNotes(files) {
     'too-long': 'That was too much to read in one go – try fewer pages at a time.',
     'too-big': 'Those photos are too big together – try fewer pages at a time.',
     passcode: 'Wrong passcode.',
+    'not-owner': 'The AI features only work on the owner’s laptop.',
   }[data.error] || (res && res.status !== 404 && res.status !== 405 ? 'Something went wrong reading the notes. Try again.'
     : 'Scanning only works on the online site (bio-study.adrian11jonker.workers.dev), with an internet connection.');
   openDialog(`<div class="dlg-head"><h2 class="grow">Couldn’t read the notes</h2><button data-close aria-label="Close">✕</button></div>
@@ -816,7 +824,190 @@ function reviewPlan(plan, pages, reader) {
   };
 }
 
+// ---------- the study helper (chat) ----------
+// Answers questions and suggests changes; changes only happen when you press "Do it".
+const chat = [];   // this visit's conversation: { role, content, actions?, done? }
+let chatBusy = false;
+
+// Everything the helper needs to know about your notes, as compact text.
+function notesForHelper() {
+  const clip = (t, n) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
+  return treeOrder().map(({ t, depth }) => {
+    const pad = '  '.repeat(depth);
+    return [`${pad}[${t.id}] ${t.name}`, ...t.entries.map((e) =>
+      `${pad}  (${e.id}) ${e.title}: ${clip(e.definition || '', 160)}${e.notes?.length ? ` | points: ${clip(e.notes.join('; '), 220)}` : ''}`)].join('\n');
+  }).join('\n');
+}
+function whereNow() {
+  if (noteId && find(noteId)) return `the note (${noteId}) "${find(noteId).e.title}" in [${find(noteId).t.id}]`;
+  if (current !== HOME && topicOf(current)) return `the topic [${current}] "${topicOf(current).name}"`;
+  return 'the dashboard';
+}
+
+// Turn the helper's suggested actions into something readable, dropping any that point at things that don't exist.
+function describeActions(actions) {
+  for (const a of actions) if (['add_note', 'move_note', 'quiz', 'open'].includes(a.type) && !a.topic && a.parent) a.topic = a.parent;
+  const keys = {};
+  const topicName = (id) => topicOf(id)?.name || keys[id] || null;
+  const out = [];
+  for (const a of actions) {
+    const note = a.note && find(a.note);
+    let text = null;
+    if (a.type === 'add_topic' && a.name && a.key) {
+      keys[a.key] = a.name;
+      text = `New topic “${a.name}”${a.parent && topicName(a.parent) ? ` inside ${topicName(a.parent)}` : ''}`;
+    } else if (a.type === 'add_note' && a.title && topicName(a.topic)) text = `New note “${a.title}” in ${topicName(a.topic)}`;
+    else if (a.type === 'update_note' && note) text = `Update “${note.e.title}”${a.definition ? ' (new definition)' : ''}${a.key_points?.length ? ` (+${plural(a.key_points.length, 'key point')})` : ''}`;
+    else if (a.type === 'move_note' && note && topicName(a.topic)) text = `Move “${note.e.title}” to ${topicName(a.topic)}`;
+    else if (a.type === 'delete_note' && note) text = `Delete the note “${note.e.title}”`;
+    else if (a.type === 'rename_topic' && topicOf(a.topic) && a.name) text = `Rename “${topicOf(a.topic).name}” to “${a.name}”`;
+    else if (a.type === 'move_topic' && topicOf(a.topic)) text = `Move “${topicOf(a.topic).name}” ${a.parent && topicName(a.parent) ? `inside ${topicName(a.parent)}` : 'to the top level'}`;
+    else if (a.type === 'delete_topic' && topicOf(a.topic)) text = `Delete the topic “${topicOf(a.topic).name}” and everything in it`;
+    if (text) out.push({ a, text });
+  }
+  return out;
+}
+
+function applyActions(actions) {
+  const keyToId = {};
+  const tid = (x) => (topicOf(x) ? x : keyToId[x]);
+  let n = 0;
+  for (const a of actions) {
+    const note = a.note && find(a.note);
+    if (a.type === 'add_topic') { const t = newTopic(a.name, tid(a.parent) || null); if (t) { keyToId[a.key] = t.id; n++; } }
+    else if (a.type === 'add_note' && topicOf(tid(a.topic))) {
+      const t = topicOf(tid(a.topic));
+      const old = t.entries.find((e) => sameNote(e.title, a.title));
+      const points = (a.key_points || []).filter(Boolean);
+      if (old) { old.notes = [...(old.notes || []), ...points.filter((k) => !(old.notes || []).includes(k))]; if (!old.definition) old.definition = a.definition || ''; }
+      else {
+        const m = DIAGRAM_WORDS.find(([re]) => re.test(a.title));
+        t.entries.push({ id: uid(), title: a.title, definition: a.definition || '', notes: points, found: /^[te]-/.test(a.found_in || '') ? '' : a.found_in || '', diagram: m ? m[1] : '', image: '' });
+      }
+      n++;
+    } else if (a.type === 'update_note' && note) {
+      if (a.title) note.e.title = a.title;
+      if (a.definition) { note.e.definition = a.definition; delete note.e.filled; }
+      if (a.key_points?.length) note.e.notes = [...(note.e.notes || []), ...a.key_points.filter((k) => k && !(note.e.notes || []).includes(k))];
+      n++;
+    } else if (a.type === 'move_note' && note && topicOf(tid(a.topic))) {
+      note.t.entries = note.t.entries.filter((x) => x !== note.e); topicOf(tid(a.topic)).entries.push(note.e); n++;
+    } else if (a.type === 'delete_note' && note) { note.t.entries = note.t.entries.filter((x) => x !== note.e); n++; }
+    else if (a.type === 'rename_topic' && topicOf(a.topic) && a.name) { topicOf(a.topic).name = a.name; n++; }
+    else if (a.type === 'move_topic' && topicOf(a.topic)) {
+      const t = topicOf(a.topic), to = tid(a.parent);
+      if (to && (to === t.id || below(t.id).some((x) => x.id === to))) continue; // can't go inside itself
+      if (to) t.parent = to; else delete t.parent;
+      n++;
+    } else if (a.type === 'delete_topic' && topicOf(a.topic)) {
+      const gone = [topicOf(a.topic), ...below(a.topic)];
+      db.topics = db.topics.filter((x) => !gone.includes(x)); n++;
+    }
+  }
+  save(); render();
+  return n;
+}
+
+function renderChat() {
+  const box = $('#bot-msgs');
+  if (!box) return;
+  box.innerHTML = chat.length ? chat.map((m, i) => {
+    const changes = m.role === 'assistant' && m.actions ? describeActions(m.actions) : [];
+    return `<div class="msg ${m.role}"><div class="bubble">${esc(m.content).replace(/\n/g, '<br>')}</div>
+      ${changes.length ? `<div class="proposal ${m.done ? 'done' : ''}"><b>${m.done ? (m.done === 'yes' ? '✓ Done' : 'Skipped') : 'Suggested changes'}</b>
+        <ul>${changes.map((c) => `<li>${esc(c.text)}</li>`).join('')}</ul>
+        ${m.done ? '' : `<div class="row"><button class="primary" data-do="${i}">Do it</button><button data-skip="${i}">No thanks</button></div>`}</div>` : ''}</div>`;
+  }).join('') : `<div class="bot-hello"><p>Hi! Ask me about your notes, or ask me to change them.</p>
+      <div class="chips">${['Quiz me on Headstart', 'What does the Golgi body do?', 'Add a note on osmosis to a new Cell transport topic', 'Which of my notes have no definition?']
+        .map((q) => `<button class="chip ask" data-ask="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`;
+  if (chatBusy) box.insertAdjacentHTML('beforeend', '<div class="msg assistant"><div class="bubble typing"><span></span><span></span><span></span></div></div>');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function askHelper(text) {
+  text = text.trim();
+  if (!text || chatBusy) return;
+  chat.push({ role: 'user', content: text });
+  chatBusy = true; renderChat();
+  const { res, data, cancelled } = await callApi('api/assistant', {
+    messages: chat.map((m) => ({ role: m.role, content: m.content })), notes: notesForHelper(), where: whereNow(),
+  });
+  chatBusy = false;
+  if (cancelled) { chat.pop(); return renderChat(); }
+  if (!res?.ok || typeof data.reply !== 'string') {
+    const why = { 'daily-limit': 'I’ve used up today’s free allowance – try again tomorrow.', 'not-owner': 'The study helper only works on the owner’s laptop.',
+      passcode: 'Wrong passcode.' }[data.error] || (res ? 'Sorry, something went wrong – try asking again.' : 'I can only help on the online site, with an internet connection.');
+    chat.push({ role: 'assistant', content: why });
+    return renderChat();
+  }
+  const actions = Array.isArray(data.actions) ? data.actions : [];
+  // Opening a page or starting flashcards happens straight away; changes wait for "Do it".
+  for (const a of actions) {
+    if (a.type === 'open' && a.note && find(a.note)) openDetail(a.note);
+    else if (a.type === 'open' && a.topic && topicOf(a.topic)) openTopic(a.topic);
+  }
+  const quiz = actions.find((a) => a.type === 'quiz');
+  const changes = actions.filter((a) => !['open', 'quiz'].includes(a.type));
+  chat.push({ role: 'assistant', content: data.reply, actions: describeActions(changes).length ? changes : null });
+  renderChat();
+  if (quiz) startQuiz(quiz.topic && topicOf(quiz.topic) ? quiz.topic : '');
+}
+
+function toggleHelper(open = !document.body.classList.contains('bot-open')) {
+  document.body.classList.toggle('bot-open', open);
+  $('#bot').hidden = !open;
+  if (open) { renderChat(); setTimeout(() => $('#bot-input').focus(), 50); }
+}
+$('#bot-btn').onclick = () => toggleHelper();
+$('#bot-close').onclick = () => toggleHelper(false);
+$('#bot-form').onsubmit = (ev) => { ev.preventDefault(); const i = $('#bot-input'); askHelper(i.value); i.value = ''; };
+$('#bot-input').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); $('#bot-form').requestSubmit(); } });
+$('#bot-msgs').addEventListener('click', (ev) => {
+  const ask = ev.target.closest('[data-ask]');
+  if (ask) return askHelper(ask.dataset.ask);
+  const go = ev.target.closest('[data-do]'), skip = ev.target.closest('[data-skip]');
+  const m = chat[(go || skip)?.dataset.do ?? (go || skip)?.dataset.skip];
+  if (!m) return;
+  if (go) { const n = applyActions(m.actions); m.done = 'yes'; toast(n ? `Done – ${plural(n, 'change')} made` : 'Nothing to change'); } else m.done = 'no';
+  renderChat();
+});
+
+// ---------- who may use the AI features (scanning, the study helper) ----------
+// The Worker decides (OWNER_IPS / APP_PASSCODE). Friends with the link just don't see these buttons.
+let aiInfo = null;
+async function checkAI() {
+  try {
+    const res = await fetch('api/whoami', { headers: { 'x-passcode': passcode() } });
+    aiInfo = res.ok ? await res.json() : null;
+  } catch { aiInfo = null; }
+  const show = !!aiInfo?.ai && (aiInfo.owner || aiInfo.hasPasscode);
+  document.body.classList.toggle('no-ai', !show);
+}
+function openDeviceInfo() {
+  const a = aiInfo;
+  openDialog(`<div class="dlg-head"><h2 class="grow">This device &amp; the AI features</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body form">
+      <p>Your notes are saved only on this device. Nothing you write is sent anywhere, so other people using the link have their own separate notes.</p>
+      ${a ? `<p class="hint">Scanning and the study helper ${a.owner ? '<b>work on this device</b>' : '<b>are locked on this device</b>'}.
+        ${a.locked ? '' : 'Right now they’re open to anyone with the link.'}</p>
+      <p>This device’s internet address: <code>${esc(a.ip || 'unknown')}</code></p>
+      <p class="where">To lock the AI features to this laptop: Cloudflare → Workers &amp; Pages → bio-study → Settings → Variables and Secrets → Add →
+        type <b>Secret</b>, name <code>OWNER_IPS</code>, value <code>${esc(a.suggest || a.ip || '')}</code>. Add a secret <code>APP_PASSCODE</code> too, so you can still use them
+        at school or when your home address changes.</p>` : '<p class="hint">The AI features only work on the online site.</p>'}
+    </div>
+    <div class="dlg-foot"><span class="grow"></span>${passcode() ? '<button id="forget-pass">Forget the passcode on this device</button>' : ''}<button data-close>Close</button></div>`, 'small');
+  const f = $('#forget-pass');
+  if (f) f.onclick = () => { try { localStorage.removeItem(PASS_KEY); } catch { /* fine */ } dlg.close(); checkAI(); toast('Passcode forgotten'); };
+}
+$('#btn-device').onclick = () => { $('.more').open = false; openDeviceInfo(); };
+
 // ---------- flashcards ----------
+function startQuiz(topicId) {
+  openCards();
+  if (topicId) $('#fc-topic').value = topicId;
+  $('#fc-start').click();
+}
+
 function openCards() {
   const withDef = all().filter(({ e }) => e.definition);
   if (!withDef.length) return toast('Add some notes with definitions first.');
@@ -918,3 +1109,4 @@ $('#btn-install').onclick = async () => {
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 route();
+checkAI();

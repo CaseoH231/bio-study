@@ -13,4 +13,5 @@ check() { # name, test file, text that must appear
 }
 check "app smoke test" test_biology.cjs "biology ok"
 check "scanning photos of notes" test_scan.cjs "scan ok"
+check "study helper and owner lock" test_helper.cjs "helper ok"
 [ $fails = 0 ] && echo "All tests passed." || { echo "$fails test(s) failed."; exit 1; }
