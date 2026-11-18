@@ -39,6 +39,7 @@ function treeOrdered(topics) {
 // sameNote(a, b) decides whether two note titles mean the same thing (passed in from the app).
 export function mergeImport(d, published, sameNote = (a, b) => lower(a) === lower(b)) {
   const pub = clone(published);
+  normalise(pub);
   const base = d.sync && d.sync.mode === 'merge' ? d.sync : { notes: {}, topics: {} };
   const stats = { added: 0, updated: 0, kept: 0, removed: 0, folded: 0 };
   const T = (id) => d.topics.find((t) => t.id === id);
@@ -161,7 +162,9 @@ export function separateImport(d, published) {
   d.topics = d.topics.filter((t) => !t.id.startsWith(PREFIX) && t.id !== OWNERS);
   d.topics.push({ id: OWNERS, name: `${OWNER_NAME}'s notes`, color: '#7c3aed', entries: [] });
   const count = { notes: 0 };
-  for (const pt of clone(published.topics)) {
+  const pub = clone(published);
+  normalise(pub);
+  for (const pt of pub.topics) {
     d.topics.push({
       ...pt, id: PREFIX + pt.id, parent: pt.parent ? PREFIX + pt.parent : OWNERS,
       entries: pt.entries.map((e) => { count.notes++; return { ...e, id: PREFIX + e.id }; }),
@@ -182,4 +185,41 @@ export function unseparate(d) {
     else delete personal.parent;
   }
   delete d.sync;
+}
+
+// Undo any "Personal" / owner's-section wrapping, however deeply it got nested: owner's-section copies lose their
+// "dm-" prefix, the two section topics go, and their contents move back to the top. If the same topic or note now
+// exists twice, the person's own copy (fewest prefixes) wins; nothing is dropped otherwise. Returns true if it changed anything.
+export function normalise(d) {
+  const depth = (id) => { let n = 0; while (id.startsWith(PREFIX)) { id = id.slice(PREFIX.length); n++; } return n; };
+  const strip = (id) => (id ? id.slice(PREFIX.length * depth(id)) : id);
+  const wrapper = (id) => id === PERSONAL || id === OWNERS;
+  const messy = d.topics.some((t) => t.id.startsWith(PREFIX) || wrapper(t.id) || (t.parent && (t.parent.startsWith(PREFIX) || wrapper(t.parent)))
+    || t.entries.some((e) => e.id.startsWith(PREFIX)));
+  if (!messy) return false;
+  const ordered = d.topics.map((t, i) => ({ t, i, d: depth(t.id) })).sort((a, b) => a.d - b.d || a.i - b.i);
+  const topics = new Map(), seenNotes = new Set();
+  for (const { t } of ordered) {
+    const id = strip(t.id);
+    const entries = t.entries.map((e) => ({ ...e, id: strip(e.id) })).filter((e) => !seenNotes.has(e.id) && seenNotes.add(e.id));
+    if (wrapper(id)) {
+      // Notes kept directly in a section topic go in a plain topic of their own.
+      if (entries.length) {
+        const keep = topics.get('my-notes') || { id: 'my-notes', name: id === PERSONAL ? 'Personal' : `${OWNER_NAME}'s notes`, color: t.color, entries: [] };
+        keep.entries.push(...entries); topics.set('my-notes', keep);
+      }
+      continue;
+    }
+    if (topics.has(id)) { topics.get(id).entries.push(...entries); continue; }
+    const copy = { ...t, id, entries };
+    const parent = strip(t.parent);
+    if (parent && !wrapper(parent)) copy.parent = parent; else delete copy.parent;
+    topics.set(id, copy);
+  }
+  // Keep the original order of first appearance.
+  const firstSeen = new Map();
+  d.topics.forEach((t, i) => { const id = wrapper(strip(t.id)) ? 'my-notes' : strip(t.id); if (!firstSeen.has(id)) firstSeen.set(id, i); });
+  d.topics = [...topics.values()].sort((a, b) => firstSeen.get(a.id) - firstSeen.get(b.id));
+  for (const t of d.topics) if (t.parent && !topics.has(t.parent)) delete t.parent;
+  return true;
 }

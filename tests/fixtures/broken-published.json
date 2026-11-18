@@ -1,0 +1,449 @@
+{
+ "version": 1,
+ "starter": 7,
+ "topics": [
+  {
+   "id": "personal",
+   "name": "Personal",
+   "color": "#0f766e",
+   "entries": []
+  },
+  {
+   "id": "owner-notes",
+   "name": "Donut-Man's notes",
+   "color": "#7c3aed",
+   "entries": []
+  },
+  {
+   "id": "dm-personal",
+   "name": "Personal",
+   "color": "#0f766e",
+   "entries": [],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "dm-owner-notes",
+   "name": "Donut-Man's notes",
+   "color": "#7c3aed",
+   "entries": [],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "dm-dm-t-headstart",
+   "name": "Headstart",
+   "color": "#7c3aed",
+   "entries": [],
+   "parent": "dm-owner-notes"
+  },
+  {
+   "id": "dm-dm-t-celltypes",
+   "name": "Cell types",
+   "color": "#be123c",
+   "entries": [],
+   "parent": "dm-dm-t-headstart"
+  },
+  {
+   "id": "dm-dm-t-animal",
+   "parent": "dm-dm-t-celltypes",
+   "name": "Eukaryotic cells",
+   "color": "#be123c",
+   "entries": [
+    {
+     "id": "dm-dm-e-animalcell",
+     "title": "Animal cell",
+     "diagram": "animalcell",
+     "image": "img/animal-cell.jpg",
+     "found": "Animal",
+     "filled": true,
+     "definition": "A eukaryotic cell with a nucleus but no cell wall, chloroplasts or large central vacuole.",
+     "notes": [
+      "Parts (from my diagram): cell membrane, cytoplasm, nucleus, rough & smooth ER, ribosomes, Golgi body, secretory vesicles, mitochondrion, lysosome, peroxisome, centrosome & centrioles, cilium"
+     ]
+    },
+    {
+     "id": "dm-dm-e-plantcell",
+     "title": "Plant cell",
+     "diagram": "plantcell",
+     "found": "Plant",
+     "filled": true,
+     "definition": "A eukaryotic cell with a cell wall, chloroplasts and a large central vacuole, as well as all the shared organelles.",
+     "notes": []
+    }
+   ]
+  },
+  {
+   "id": "dm-dm-t-prok",
+   "parent": "dm-dm-t-celltypes",
+   "name": "Prokaryotic cells",
+   "color": "#b45309",
+   "entries": []
+  },
+  {
+   "id": "dm-dm-t-shared",
+   "parent": "dm-dm-t-headstart",
+   "name": "Organelles",
+   "color": "#2563eb",
+   "entries": []
+  },
+  {
+   "id": "dm-dm-t-euk",
+   "parent": "dm-dm-t-shared",
+   "name": "In all eukaryotic cells",
+   "color": "#0891b2",
+   "entries": [
+    {
+     "id": "dm-dm-e-nucleus",
+     "title": "Nucleus",
+     "diagram": "nucleus",
+     "found": "Plant, Animal",
+     "filled": true,
+     "definition": "Contains the cell’s DNA and controls the cell’s activities.",
+     "notes": [
+      "Parts (from my diagram): nuclear envelope, nuclear pore, nucleolus, nucleoplasm",
+      "Parts (from slide 19): nuclear pore, nuclear envelope, euchromatin, heterochromatin, nucleolus (pars granulosa, pars fibrosa), nucleolar organising centre, rough ER joined to the envelope"
+     ],
+     "image": "img/slides/nucleus-slide19.jpg",
+     "imageCaption": "From the lesson slides (slide 19)"
+    },
+    {
+     "id": "dm-dm-e-mito",
+     "title": "Mitochondria",
+     "diagram": "mitochondria",
+     "image": "img/mitochondria.jpg",
+     "found": "Plant, Animal",
+     "definition": "Release energy as ATP – the site of aerobic respiration.",
+     "notes": [
+      "Mitochondria = plural, mitochondrion = singular",
+      "RELEASES energy – ATP (adenosine triphosphate)",
+      "Metabolically active cells have more",
+      "The “jiggly wiggly” folds are the cristae",
+      "Site of aerobic respiration (Krebs cycle & oxidative phosphorylation)",
+      "Can make their own proteins",
+      "Can replicate themselves when the cell divides"
+     ]
+    },
+    {
+     "id": "dm-dm-e-er",
+     "title": "Endoplasmic reticulum (ER)",
+     "diagram": "er",
+     "image": "img/er.jpg",
+     "found": "Plant, Animal",
+     "filled": true,
+     "definition": "A network of membranes joined to the nucleus. Rough ER (with ribosomes) makes proteins; smooth ER makes lipids.",
+     "notes": [
+      "Rough ER – covered in ribosomes",
+      "Smooth ER – no ribosomes"
+     ]
+    },
+    {
+     "id": "dm-dm-e-golgi",
+     "title": "Golgi body",
+     "diagram": "golgi",
+     "image": "img/golgi.jpg",
+     "found": "Plant, Animal",
+     "definition": "Packages proteins into vesicles and moves them safely out of the cell.",
+     "notes": [
+      "Also called the Golgi complex or Golgi apparatus",
+      "Safely gets things out of the cell",
+      "Packages & moves proteins out of the cell – covers them in vesicles if they might be seen as dangerous",
+      "Close to, but not touching, the nucleus",
+      "Transports, modifies and stores lipids (fats)",
+      "Assembles glycoproteins",
+      "Forms lysosomes",
+      "Digestive fluids"
+     ]
+    },
+    {
+     "id": "dm-dm-e-ribo",
+     "title": "Ribosomes",
+     "diagram": "ribosome",
+     "image": "img/ribosome.jpg",
+     "found": "Plant, Animal",
+     "filled": true,
+     "definition": "Where proteins are made: they read the mRNA and join amino acids together, which tRNA brings in.",
+     "notes": [
+      "Parts (from my diagram): large subunit, small subunit, mRNA, tRNA, amino acid"
+     ]
+    },
+    {
+     "id": "dm-dm-e-perox",
+     "title": "Peroxisomes",
+     "diagram": "peroxisome",
+     "found": "Plant, Animal",
+     "filled": true,
+     "definition": "Small sacs of enzymes, surrounded by one membrane, that break down harmful hydrogen peroxide and fatty acids.",
+     "notes": []
+    },
+    {
+     "id": "dm-dm-e-cytoskel",
+     "title": "Cytoskeleton",
+     "diagram": "cytoskeleton",
+     "found": "Plant, Animal",
+     "filled": true,
+     "definition": "A network of protein fibres that supports the cell, keeps its shape and moves things around inside it.",
+     "notes": []
+    }
+   ]
+  },
+  {
+   "id": "dm-dm-t-plant",
+   "parent": "dm-dm-t-shared",
+   "name": "Plant cells only",
+   "color": "#16a34a",
+   "entries": [
+    {
+     "id": "dm-dm-e-wall",
+     "title": "Cell wall",
+     "diagram": "wall",
+     "found": "Plant only",
+     "definition": "The tough outer layer of a plant cell. It gives structural support and protection.",
+     "notes": [
+      "Tough outer layer",
+      "Structural support",
+      "Protection"
+     ]
+    },
+    {
+     "id": "dm-dm-e-chloro",
+     "title": "Chloroplasts",
+     "diagram": "chloroplast",
+     "found": "Plant only",
+     "definition": "Plastids containing chlorophyll – where photosynthesis happens.",
+     "notes": [
+      "Plastids containing chlorophyll",
+      "Photosynthesis"
+     ]
+    },
+    {
+     "id": "dm-dm-e-vacuole",
+     "title": "Large central vacuole",
+     "diagram": "vacuole",
+     "found": "Plant only",
+     "definition": "A large water-filled sac surrounded by a membrane (the tonoplast). It stores nutrients and maintains turgor pressure.",
+     "notes": [
+      "Large water-filled sac surrounded by a membrane",
+      "The membrane is called the tonoplast",
+      "Stores nutrients",
+      "Maintains turgor pressure – to keep the plant upright"
+     ]
+    },
+    {
+     "id": "dm-dm-e-plasmo",
+     "title": "Plasmodesmata",
+     "diagram": "plasmodesmata",
+     "found": "Plant only",
+     "definition": "Microscopic channels through the cell wall.",
+     "notes": [
+      "Microscopic channels through the cell wall"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dm-dm-mwlg3xh6vd9tx",
+   "name": "Animal cells only",
+   "color": "#0891b2",
+   "entries": [
+    {
+     "id": "dm-dm-e-lyso",
+     "title": "Lysosomes",
+     "diagram": "lysosome",
+     "image": "img/lysosome.jpg",
+     "found": "Animal",
+     "definition": "Release enzymes that digest worn-out organelles and material taken into the cell.",
+     "notes": [
+      "Release enzymes which digest worn-out organelles",
+      "Completely break down the cell when it dies",
+      "Digest material taken into the cell – take & process dangerous intruders once they die",
+      "Exocytosis – exo = exit, cyt = cell"
+     ]
+    }
+   ],
+   "parent": "dm-dm-t-shared"
+  },
+  {
+   "id": "dm-dm-mwlfuym70tjyw",
+   "name": "Plasma membrane",
+   "color": "#7c3aed",
+   "entries": [],
+   "parent": "dm-dm-t-headstart"
+  },
+  {
+   "id": "dm-dm-t-membrane",
+   "name": "Membrane structure",
+   "color": "#7c3aed",
+   "entries": [
+    {
+     "id": "dm-dm-mwlfuym7vx7dm",
+     "title": "Plasma membrane",
+     "definition": "The cell surface membrane.",
+     "notes": [
+      "Also called the cell surface membrane",
+      "Made of: 1. phospholipid bilayer, 2. transmembrane proteins, 3. interior protein, 4. surface markers",
+      "Water & other small things can wiggle through the layer into the cell",
+      "Small hydrophobic molecules and small uncharged polar molecules get through easily (\"ez\")",
+      "Ions & large uncharged polar molecules need special ways to get in & out, while the others can squeeze through",
+      "Cholesterol makes the membrane more or less flexible – lets things in & out easier"
+     ],
+     "found": "",
+     "diagram": "membrane",
+     "image": "img/notes/phospholipid-bilayer.jpg"
+    },
+    {
+     "id": "dm-dm-mwlfuym8ph1nr",
+     "title": "Phospholipid bilayer",
+     "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
+     "notes": [
+      "Fluid mosaic model: phospholipids arranged in a bilayer, with globular proteins in between",
+      "Heads (hydrophilic, \"water liker\") face the water on the outside and inside; tails (hydrophobic, \"water hater\") face each other in the middle",
+      "Parts (from my diagram): extrinsic and intrinsic proteins, outside, inside, water liker, water hater"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": "img/notes/phospholipid-bilayer.jpg"
+    },
+    {
+     "id": "dm-dm-mwlfuym8nla8s",
+     "title": "Integral protein",
+     "definition": "A protein that goes all the way through both layers of the membrane.",
+     "notes": [
+      "Also called an intrinsic protein (intrinsic = inside)"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": ""
+    },
+    {
+     "id": "dm-dm-mwlfuym8qccqj",
+     "title": "Extrinsic protein",
+     "definition": "A protein that goes part of the way into the membrane, through 1 layer.",
+     "notes": [
+      "Extrinsic = outside"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": ""
+    },
+    {
+     "id": "dm-dm-mwlfuym8cnhp8",
+     "title": "Glycolipid",
+     "definition": "A component of the cell surface membrane.",
+     "notes": [],
+     "found": "",
+     "diagram": "",
+     "image": "",
+     "filled": true
+    },
+    {
+     "id": "dm-dm-mwlfuym8egiy6",
+     "title": "Glycoprotein",
+     "definition": "A component of the cell surface membrane.",
+     "notes": [],
+     "found": "",
+     "diagram": "",
+     "image": "",
+     "filled": true
+    }
+   ],
+   "parent": "dm-dm-mwlfuym70tjyw"
+  },
+  {
+   "id": "dm-dm-t-water",
+   "name": "Hydrophilic & hydrophobic",
+   "color": "#0e7490",
+   "entries": [
+    {
+     "id": "dm-dm-mwlfuym8olj2y",
+     "title": "Hydrophilic",
+     "definition": "Water-loving (\"water liker\").",
+     "notes": [
+      "philic = likes",
+      "Hydrophilic = polar molecule"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": ""
+    },
+    {
+     "id": "dm-dm-mwlfuym8mqmuc",
+     "title": "Hydrophobic",
+     "definition": "Water-hating (\"water hater\").",
+     "notes": [
+      "phobic = hater",
+      "Hydrophobic = non-polar molecule"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": ""
+    },
+    {
+     "id": "dm-dm-mwlfuym8u12b5",
+     "title": "Amphipathic molecule",
+     "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
+     "notes": [
+      "Contain both hydrophilic & hydrophobic properties",
+      "Others are steroids and glycolipids",
+      "Phospholipid: head = hydrophilic (polar molecule), tails = hydrophobic (non-polar molecule)"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": "img/notes/amphipathic-molecule.jpg"
+    },
+    {
+     "id": "dm-dm-mwlfuym82b5vq",
+     "title": "Micelle",
+     "definition": "A structure formed by amphipathic molecules.",
+     "notes": [
+      "A ball of phospholipids in water: heads face the water, tails hide in the middle (from my diagram)"
+     ],
+     "found": "",
+     "diagram": "",
+     "image": "img/notes/micelle.jpg",
+     "filled": true
+    }
+   ],
+   "parent": "dm-dm-mwlfuym70tjyw"
+  },
+  {
+   "id": "dm-mwlqwluax4xpu",
+   "name": "test",
+   "color": "#0891b2",
+   "entries": [
+    {
+     "id": "dm-mwlqwwy66st9i",
+     "title": "test",
+     "definition": "test",
+     "found": "test",
+     "notes": [
+      "test"
+     ],
+     "diagram": "",
+     "image": "",
+     "color": ""
+    }
+   ],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "mwlqyunxqisqo",
+   "name": "quickie",
+   "color": "#16a34a",
+   "entries": [
+    {
+     "id": "mwlqyzm4tfv3x",
+     "title": "q",
+     "definition": "q",
+     "found": "q",
+     "notes": [
+      "q"
+     ],
+     "diagram": "",
+     "image": "",
+     "color": ""
+    }
+   ],
+   "parent": "dm-mwlqwluax4xpu"
+  }
+ ],
+ "publishedAt": "2026-11-18T06:35:41.599Z"
+}

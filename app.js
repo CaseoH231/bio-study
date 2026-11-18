@@ -1,7 +1,7 @@
 import { STARTER } from './data.js';
 import { PRESETS } from './presets.js';
 import { organiseHeadstart } from './upgrades.js';
-import { mergeImport, separateImport, unseparate, OWNER_NAME } from './sync.js';
+import { mergeImport, separateImport, unseparate, normalise, OWNER_NAME } from './sync.js';
 import { REFS } from './refs.js';
 import { DIAGRAMS, DIAGRAM_WORDS, CELLS, diagramSVG, cellSVG } from './diagrams.js';
 
@@ -1209,6 +1209,10 @@ function applyPublished(pub) {
 }
 
 async function syncWithPublished({ manual = false } = {}) {
+  if (isOwner() && !firstVisit) {
+    if (manual) toast('This is your own device – your notes are the ones that get published, so there’s nothing to get.');
+    return;
+  }
   if (!manual && (isOwner() || !settings().autoUpdate) && !firstVisit) return;
   const pub = await fetchPublished();
   if (!pub) { if (manual) toast('There are no published notes yet (or you’re offline).'); return; }
@@ -1233,11 +1237,12 @@ function openSettings() {
         <span><b>Keep my notes separate from ${OWNER_NAME}'s notes</b><small>Off: ${OWNER_NAME}'s notes are merged into yours – your notes and your edits are kept, and his
           updates go into the matching topics. On: two sections, <b>Personal</b> (your own topics and notes) and <b>${OWNER_NAME}'s notes</b>,
           which is replaced with his latest version each time – so put your own notes in Personal.</small></span></label>
-      ${isOwner() ? '<p class="hint">This is the owner’s device, so it never pulls published notes in.</p>' : ''}
+      ${isOwner() ? '<p class="hint">This is the owner’s device: it never pulls published notes in, and its notes always stay together.</p>' : ''}
     </div>
     <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="set-save">Save</button></div>`, 'small');
+  if (isOwner()) { $('#set-auto').disabled = true; $('#set-separate').disabled = true; $('#set-separate').checked = false; }
   $('#set-save').onclick = async () => {
-    const next = { autoUpdate: $('#set-auto').checked, separate: $('#set-separate').checked };
+    const next = { autoUpdate: $('#set-auto').checked, separate: isOwner() ? false : $('#set-separate').checked };
     const changed = next.separate !== s.separate;
     db.settings = next;
     if (changed) {
@@ -1262,7 +1267,9 @@ $('#btn-publish').onclick = () => {
     <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="pub-go">Publish</button></div>`, 'small');
   $('#pub-go').onclick = async () => {
     $('#pub-go').disabled = true; $('#pub-go').textContent = 'Publishing…';
-    const { sync, settings: _s, owner, ...notes } = db;
+    const { sync, settings: _s, owner, ...rest } = db;
+    const notes = JSON.parse(JSON.stringify(rest));
+    normalise(notes); // never publish the Personal / owner's-section wrapping
     const { res, data, cancelled } = await callApi('api/publish', { notes });
     if (cancelled) return dlg.close();
     if (res?.ok && data.ok) {
@@ -1298,6 +1305,17 @@ $('#btn-install').onclick = async () => {
 };
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
+// Repair notes that got wrapped in "Personal" / owner's-section topics where they shouldn't be (the owner's own
+// device, or wrapping inside wrapping). A friend's proper separate layout is left alone.
+(function repair() {
+  const nested = db.topics.some((t) => /^dm-(dm-|personal$|owner-notes$)/.test(t.id));
+  const wrapped = db.topics.some((t) => t.id === 'personal' || t.id === 'owner-notes' || t.id.startsWith('dm-'));
+  if (!nested && !(wrapped && (isOwner() || !settings().separate))) return;
+  normalise(db);
+  delete db.sync; // the next update starts fresh (and re-separates if they chose that)
+  if (isOwner()) db.settings = { ...settings(), separate: false };
+  save();
+})();
 route();
 checkAI();
 syncWithPublished();
