@@ -15,27 +15,41 @@
    "entries": []
   },
   {
-   "id": "dm-t-headstart",
-   "name": "Headstart",
+   "id": "dm-personal",
+   "name": "Personal",
+   "color": "#0f766e",
+   "entries": [],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "dm-owner-notes",
+   "name": "Donut-Man's notes",
    "color": "#7c3aed",
    "entries": [],
    "parent": "owner-notes"
   },
   {
-   "id": "dm-t-celltypes",
+   "id": "dm-dm-t-headstart",
+   "name": "Headstart",
+   "color": "#7c3aed",
+   "entries": [],
+   "parent": "dm-owner-notes"
+  },
+  {
+   "id": "dm-dm-t-celltypes",
    "name": "Cell types",
    "color": "#be123c",
    "entries": [],
-   "parent": "dm-t-headstart"
+   "parent": "dm-dm-t-headstart"
   },
   {
-   "id": "dm-t-animal",
-   "parent": "dm-t-celltypes",
+   "id": "dm-dm-t-animal",
+   "parent": "dm-dm-t-celltypes",
    "name": "Eukaryotic cells",
    "color": "#be123c",
    "entries": [
     {
-     "id": "dm-e-animalcell",
+     "id": "dm-dm-e-animalcell",
      "title": "Animal cell",
      "diagram": "animalcell",
      "image": "img/animal-cell.jpg",
@@ -47,7 +61,7 @@
      ]
     },
     {
-     "id": "dm-e-plantcell",
+     "id": "dm-dm-e-plantcell",
      "title": "Plant cell",
      "diagram": "plantcell",
      "found": "Plant",
@@ -58,27 +72,27 @@
    ]
   },
   {
-   "id": "dm-t-prok",
-   "parent": "dm-t-celltypes",
+   "id": "dm-dm-t-prok",
+   "parent": "dm-dm-t-celltypes",
    "name": "Prokaryotic cells",
    "color": "#b45309",
    "entries": []
   },
   {
-   "id": "dm-t-shared",
-   "parent": "dm-t-headstart",
+   "id": "dm-dm-t-shared",
+   "parent": "dm-dm-t-headstart",
    "name": "Organelles",
    "color": "#2563eb",
    "entries": []
   },
   {
-   "id": "dm-t-euk",
-   "parent": "dm-t-shared",
+   "id": "dm-dm-t-euk",
+   "parent": "dm-dm-t-shared",
    "name": "In all eukaryotic cells",
    "color": "#0891b2",
    "entries": [
     {
-     "id": "dm-e-nucleus",
+     "id": "dm-dm-e-nucleus",
      "title": "Nucleus",
      "diagram": "nucleus",
      "found": "Plant, Animal",
@@ -92,7 +106,7 @@
      "imageCaption": "From the lesson slides (slide 19)"
     },
     {
-     "id": "dm-e-mito",
+     "id": "dm-dm-e-mito",
      "title": "Mitochondria",
      "diagram": "mitochondria",
      "image": "img/mitochondria.jpg",
@@ -109,7 +123,7 @@
      ]
     },
     {
-     "id": "dm-e-er",
+     "id": "dm-dm-e-er",
      "title": "Endoplasmic reticulum (ER)",
      "diagram": "er",
      "image": "img/er.jpg",
@@ -122,7 +136,7 @@
      ]
     },
     {
-     "id": "dm-e-golgi",
+     "id": "dm-dm-e-golgi",
      "title": "Golgi body",
      "diagram": "golgi",
      "image": "img/golgi.jpg",
@@ -140,7 +154,7 @@
      ]
     },
     {
-     "id": "dm-e-ribo",
+     "id": "dm-dm-e-ribo",
      "title": "Ribosomes",
      "diagram": "ribosome",
      "image": "img/ribosome.jpg",
@@ -152,7 +166,7 @@
      ]
     },
     {
-     "id": "dm-e-perox",
+     "id": "dm-dm-e-perox",
      "title": "Peroxisomes",
      "diagram": "peroxisome",
      "found": "Plant, Animal",
@@ -161,7 +175,7 @@
      "notes": []
     },
     {
-     "id": "dm-e-cytoskel",
+     "id": "dm-dm-e-cytoskel",
      "title": "Cytoskeleton",
      "diagram": "cytoskeleton",
      "found": "Plant, Animal",
@@ -172,13 +186,13 @@
    ]
   },
   {
-   "id": "dm-t-plant",
-   "parent": "dm-t-shared",
+   "id": "dm-dm-t-plant",
+   "parent": "dm-dm-t-shared",
    "name": "Plant cells only",
    "color": "#16a34a",
    "entries": [
     {
-     "id": "dm-e-wall",
+     "id": "dm-dm-e-wall",
      "title": "Cell wall",
      "diagram": "wall",
      "found": "Plant only",
@@ -190,7 +204,7 @@
      ]
     },
     {
-     "id": "dm-e-chloro",
+     "id": "dm-dm-e-chloro",
      "title": "Chloroplasts",
      "diagram": "chloroplast",
      "found": "Plant only",
@@ -201,7 +215,7 @@
      ]
     },
     {
-     "id": "dm-e-vacuole",
+     "id": "dm-dm-e-vacuole",
      "title": "Large central vacuole",
      "diagram": "vacuole",
      "found": "Plant only",
@@ -214,7 +228,7 @@
      ]
     },
     {
-     "id": "dm-e-plasmo",
+     "id": "dm-dm-e-plasmo",
      "title": "Plasmodesmata",
      "diagram": "plasmodesmata",
      "found": "Plant only",
@@ -226,12 +240,12 @@
    ]
   },
   {
-   "id": "dm-mwlg3xh6vd9tx",
+   "id": "dm-dm-mwlg3xh6vd9tx",
    "name": "Animal cells only",
    "color": "#0891b2",
    "entries": [
     {
-     "id": "dm-e-lyso",
+     "id": "dm-dm-e-lyso",
      "title": "Lysosomes",
      "diagram": "lysosome",
      "image": "img/lysosome.jpg",
@@ -245,22 +259,22 @@
      ]
     }
    ],
-   "parent": "dm-t-shared"
+   "parent": "dm-dm-t-shared"
   },
   {
-   "id": "dm-mwlfuym70tjyw",
+   "id": "dm-dm-mwlfuym70tjyw",
    "name": "Plasma membrane",
    "color": "#7c3aed",
    "entries": [],
-   "parent": "dm-t-headstart"
+   "parent": "dm-dm-t-headstart"
   },
   {
-   "id": "dm-t-membrane",
+   "id": "dm-dm-t-membrane",
    "name": "Membrane structure",
    "color": "#7c3aed",
    "entries": [
     {
-     "id": "dm-mwlfuym7vx7dm",
+     "id": "dm-dm-mwlfuym7vx7dm",
      "title": "Plasma membrane",
      "definition": "The cell surface membrane.",
      "notes": [
@@ -276,7 +290,7 @@
      "image": "img/notes/phospholipid-bilayer.jpg"
     },
     {
-     "id": "dm-mwlfuym8ph1nr",
+     "id": "dm-dm-mwlfuym8ph1nr",
      "title": "Phospholipid bilayer",
      "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
      "notes": [
@@ -289,7 +303,7 @@
      "image": "img/notes/phospholipid-bilayer.jpg"
     },
     {
-     "id": "dm-mwlfuym8nla8s",
+     "id": "dm-dm-mwlfuym8nla8s",
      "title": "Integral protein",
      "definition": "A protein that goes all the way through both layers of the membrane.",
      "notes": [
@@ -300,7 +314,7 @@
      "image": ""
     },
     {
-     "id": "dm-mwlfuym8qccqj",
+     "id": "dm-dm-mwlfuym8qccqj",
      "title": "Extrinsic protein",
      "definition": "A protein that goes part of the way into the membrane, through 1 layer.",
      "notes": [
@@ -311,7 +325,7 @@
      "image": ""
     },
     {
-     "id": "dm-mwlfuym8cnhp8",
+     "id": "dm-dm-mwlfuym8cnhp8",
      "title": "Glycolipid",
      "definition": "A component of the cell surface membrane.",
      "notes": [],
@@ -321,7 +335,7 @@
      "filled": true
     },
     {
-     "id": "dm-mwlfuym8egiy6",
+     "id": "dm-dm-mwlfuym8egiy6",
      "title": "Glycoprotein",
      "definition": "A component of the cell surface membrane.",
      "notes": [],
@@ -331,15 +345,15 @@
      "filled": true
     }
    ],
-   "parent": "dm-mwlfuym70tjyw"
+   "parent": "dm-dm-mwlfuym70tjyw"
   },
   {
-   "id": "dm-t-water",
+   "id": "dm-dm-t-water",
    "name": "Hydrophilic & hydrophobic",
    "color": "#0e7490",
    "entries": [
     {
-     "id": "dm-mwlfuym8olj2y",
+     "id": "dm-dm-mwlfuym8olj2y",
      "title": "Hydrophilic",
      "definition": "Water-loving (\"water liker\").",
      "notes": [
@@ -351,7 +365,7 @@
      "image": ""
     },
     {
-     "id": "dm-mwlfuym8mqmuc",
+     "id": "dm-dm-mwlfuym8mqmuc",
      "title": "Hydrophobic",
      "definition": "Water-hating (\"water hater\").",
      "notes": [
@@ -363,7 +377,7 @@
      "image": ""
     },
     {
-     "id": "dm-mwlfuym8u12b5",
+     "id": "dm-dm-mwlfuym8u12b5",
      "title": "Amphipathic molecule",
      "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
      "notes": [
@@ -376,7 +390,7 @@
      "image": "img/notes/amphipathic-molecule.jpg"
     },
     {
-     "id": "dm-mwlfuym82b5vq",
+     "id": "dm-dm-mwlfuym82b5vq",
      "title": "Micelle",
      "definition": "A structure formed by amphipathic molecules.",
      "notes": [
@@ -388,15 +402,15 @@
      "filled": true
     }
    ],
-   "parent": "dm-mwlfuym70tjyw"
+   "parent": "dm-dm-mwlfuym70tjyw"
   },
   {
-   "id": "mwlqwluax4xpu",
+   "id": "dm-mwlqwluax4xpu",
    "name": "test",
    "color": "#0891b2",
    "entries": [
     {
-     "id": "mwlqwwy66st9i",
+     "id": "dm-mwlqwwy66st9i",
      "title": "test",
      "definition": "test",
      "found": "test",
@@ -407,8 +421,29 @@
      "image": "",
      "color": ""
     }
-   ]
+   ],
+   "parent": "owner-notes"
+  },
+  {
+   "id": "mwlqyunxqisqo",
+   "name": "quickie",
+   "color": "#16a34a",
+   "entries": [
+    {
+     "id": "mwlqyzm4tfv3x",
+     "title": "q",
+     "definition": "q",
+     "found": "q",
+     "notes": [
+      "q"
+     ],
+     "diagram": "",
+     "image": "",
+     "color": ""
+    }
+   ],
+   "parent": "dm-mwlqwluax4xpu"
   }
  ],
- "publishedAt": "2026-11-18T06:34:09.747Z"
+ "publishedAt": "2026-11-18T06:35:41.599Z"
 }
