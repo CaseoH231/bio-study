@@ -6,7 +6,7 @@
 // (Usually you'd use "Publish my notes" in the app instead – new visitors then get the published notes.)
 export const STARTER = {
   "version": 1,
-  "starter": 5,
+  "starter": 6,
   "topics": [
     {
       "id": "t-headstart",
@@ -16,7 +16,7 @@ export const STARTER = {
     },
     {
       "id": "t-plant",
-      "parent": "t-shared",
+      "parent": "t-euk",
       "name": "Plant-Only Organelles",
       "color": "#16a34a",
       "entries": [
@@ -73,6 +73,13 @@ export const STARTER = {
       "parent": "t-headstart",
       "name": "Organelles",
       "color": "#2563eb",
+      "entries": []
+    },
+    {
+      "id": "t-euk",
+      "parent": "t-shared",
+      "name": "Eukaryotic",
+      "color": "#0891b2",
       "entries": [
         {
           "id": "e-nucleus",
@@ -181,6 +188,13 @@ export const STARTER = {
           ]
         }
       ]
+    },
+    {
+      "id": "t-prok",
+      "parent": "t-shared",
+      "name": "Prokaryotic",
+      "color": "#b45309",
+      "entries": []
     },
     {
       "id": "t-animal",
@@ -337,7 +351,7 @@ export const STARTER = {
           "image": ""
         }
       ],
-      "parent": "t-shared"
+      "parent": "t-euk"
     },
     {
       "id": "mwlg3xh6vd9tx",

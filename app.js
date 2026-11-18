@@ -30,6 +30,21 @@ if (upgradeStarter(db)) save();
 // When the starter notes change, update anyone who still has the old ones. Topics people added themselves are kept.
 //   starter 1 → the untouched "Cell organelles" topic is swapped for the notebook notes
 //   starter 2 → the three notebook topics move inside a "Headstart" topic
+// Organelles gets two sub-topics, Eukaryotic and Prokaryotic (left empty). Everything in Organelles except the
+// animal-only topic moves into Eukaryotic: its own notes, Plant-Only Organelles and Plasma membrane. Moves only –
+// no notes are changed – and only if it hasn't been done already.
+function splitEukaryotic(d) {
+  const org = d.topics.find((t) => t.id === 't-shared');
+  if (!org || d.topics.some((t) => t.id === 't-euk')) return;
+  const euk = { id: 't-euk', parent: 't-shared', name: 'Eukaryotic', color: '#0891b2', entries: org.entries };
+  const prok = { id: 't-prok', parent: 't-shared', name: 'Prokaryotic', color: '#b45309', entries: [] };
+  org.entries = [];
+  for (const t of d.topics) {
+    if (t.parent === 't-shared' && (t.id === 't-plant' || t.name.toLowerCase() === 'plasma membrane')) t.parent = 't-euk';
+  }
+  d.topics.splice(d.topics.indexOf(org) + 1, 0, euk, prok); // so they come before Animal-Only Organelles
+}
+
 function upgradeStarter(d) {
   const from = d.starter || 1;
   if (from >= STARTER.starter) return false;
@@ -57,6 +72,7 @@ function upgradeStarter(d) {
       if (!(n.notes || []).includes(point)) n.notes = [...(n.notes || []), point];
     }
   }
+  if (from < 6) splitEukaryotic(d);
   d.starter = STARTER.starter;
   return true;
 }

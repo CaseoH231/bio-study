@@ -36,7 +36,7 @@ const path = require('path');
       await p.goBack(); await p.waitForSelector('.card');         // Back returns to the topic
     }
   }
-  await p.goto('http://localhost:8766/#/topic/t-shared'); await p.waitForSelector('.card');
+  await p.goto('http://localhost:8766/#/topic/t-euk'); await p.waitForSelector('.card');
   const href = await p.getAttribute('.card', 'href');              // a real link, so Ctrl-click opens a new tab
   const tab = await b.newPage(); await tab.goto('http://localhost:8766/' + href);
   const tabTitle = await tab.textContent('.note-page h2'); await tab.close();
@@ -89,14 +89,17 @@ const path = require('path');
     { id: 't-shared', parent: 't-headstart', name: 'Organelles', color: '#2563eb', entries: [{ id: 'e-nucleus', title: 'Nucleus', definition: 'Mine', notes: ['my point'], diagram: 'nucleus', image: '' }] }] })));
   await p.goto('http://localhost:8766/#/note/e-nucleus'); await p.reload(); await p.waitForSelector('.note-page');
   const slide = [await p.getAttribute('.note-page .myimg img', 'src'), await p.textContent('.note-page .myimg figcaption'), await p.textContent('.note-page .def')].join(' | ');
+  const split = (await p.textContent('.crumbs')).replace(/\s+/g, ' ');           // and Organelles is split into Eukaryotic / Prokaryotic
+  const organelleKids = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('bio-study-notes-v1'));
+    return d.topics.filter((t) => t.parent === 't-shared').map((t) => `${t.name}:${t.entries.length}`).join('|'); });
   await p.evaluate(() => localStorage.clear());
 
   const wantFigs = every.filter((e) => e.diagram).length, wantPhotos = every.filter((e) => e.image).length;
-  console.log('slide', slide, 'explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
+  console.log('split', split, organelleKids, 'slide', slide, 'explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
     'pasted', pasted.join('|'), 'preset', preset, preset2, 'upgraded', upgraded, 'errors', errs.length);
-  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Plant-Only Organelles › Plasmodesmata') &&
+  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Eukaryotic › Plant-Only Organelles › Plasmodesmata') &&
     backTo.includes('Plant-Only Organelles') && tiles === 'Organelles|Cells' && explorerOn.join('|') === 'Cells' &&
-    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && slide === 'img/slides/nucleus-slide19.jpg | From the lesson slides (slide 19) | Mine' && cards === every.length &&
+    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && slide === 'img/slides/nucleus-slide19.jpg | From the lesson slides (slide 19) | Mine' && split.includes('Organelles › Eukaryotic › Nucleus') && organelleKids === 'Eukaryotic:1|Prokaryotic:0' && cards === every.length &&
     figs === wantFigs && photos === wantPhotos && !broken && opened === 'Plasmodesmata' &&
     pasted.length === 3 && pasted.includes('Active site') && preset === 6 && preset2 === 6 &&
     upgraded === 'Headstart|My topic' && !errs.length;

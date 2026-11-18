@@ -34,7 +34,7 @@ const path = require('path');
       new_topics: [{ key: 'new-1', name: 'Cell transport', parent: 't-headstart' }, { key: 'new-2', name: 'Diffusion bits', parent: 'new-1' }, { key: 'new-3', name: 'Unused', parent: null }],
       notes: [
         { topic: 'new-2', title: 'Diffusion', definition: 'Particles spreading out.', key_points: ['high to low'], found_in: '', diagram: 'none', filled: false, drawing: { page: 1, x0: 100, y0: 100, x1: 500, y1: 400 } },
-        { topic: 't-shared', title: 'lysosomes', definition: 'ignored', key_points: ['from photo'], found_in: '', diagram: 'none', filled: false, drawing: null },
+        { topic: 't-euk', title: 'lysosomes', definition: 'ignored', key_points: ['from photo'], found_in: '', diagram: 'none', filled: false, drawing: null },
         { topic: 'nonsense', title: 'Stray', definition: 'Somewhere.', key_points: [], found_in: '', diagram: 'none', filled: true, drawing: null },
       ] } } });
   });
@@ -57,7 +57,7 @@ const path = require('path');
   const data = await p.evaluate(() => JSON.parse(localStorage.getItem('bio-study-notes-v1')));
   const byName = (n) => data.topics.find((t) => t.name === n);
   const diffusion = byName('Diffusion bits')?.entries[0];
-  const lyso = data.topics.find((t) => t.id === 't-shared').entries.find((e) => e.title === 'Lysosomes');
+  const lyso = data.topics.find((t) => t.id === 't-euk').entries.find((e) => e.title === 'Lysosomes');
   const stray = byName('From my photos')?.entries[0];
   await p.evaluate(() => localStorage.clear());
   console.log('worker', worker, '| free reader', freeOk, '| calls', calls, '| sent pages', sent.images.length, '| tree size', sent.tree.length, '| thumbs', thumbs, '| picked', picked, '| crumbs', crumbs,
