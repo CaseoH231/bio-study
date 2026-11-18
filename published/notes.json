@@ -427,7 +427,25 @@
      "color": ""
     }
    ]
+  },
+  {
+   "id": "mwlrbssfa2v2t",
+   "name": "E",
+   "color": "#0891b2",
+   "entries": [
+    {
+     "id": "mwlrbvsjcgqsj",
+     "title": "E",
+     "definition": "",
+     "found": "",
+     "notes": [],
+     "diagram": "",
+     "image": "",
+     "color": ""
+    }
+   ],
+   "parent": "mwlqwluax4xpu"
   }
  ],
- "publishedAt": "2026-11-18T06:44:46.107Z"
+ "publishedAt": "2026-11-18T06:45:42.494Z"
 }
