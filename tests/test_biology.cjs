@@ -1,7 +1,10 @@
 // Smoke test for Bio Study Notes: every card opens with its diagram (and notebook photo), the cell explorer works,
 // pasted notes and presets are sorted, and old starter notes are swapped for the notebook notes.
 const { chromium } = require('playwright');
+const path = require('path');
 (async () => {
+  const { STARTER } = await import(path.join(__dirname, '..', 'data.js'));
+  const every = STARTER.topics.flatMap((t) => t.entries);
   const b = await chromium.launch(); const p = await b.newPage();
   const errs = []; p.on('pageerror', (e) => errs.push(e.message));
   p.on('dialog', (d) => d.accept('Test topic'));
@@ -13,10 +16,11 @@ const { chromium } = require('playwright');
   };
   await openT('Headstart');                                        // a folder: opens to show its sub-topics
   const tiles = await p.$$eval('.tcard h3', (h) => h.map((x) => x.textContent.trim()).join('|'));
-  const topics = await p.$$eval('#topics .topic[data-topic^="t-"] .nm', (t) => t.map((x) => x.textContent));
+  const topics = STARTER.topics.map((t) => t.name);
   let cards = 0, figs = 0, photos = 0, broken = 0;
-  for (const name of topics) {
-    await openT(name);
+  for (const t of STARTER.topics) {                                 // visit every topic by its address
+    await p.goto(`http://localhost:8766/#/topic/${t.id}`);
+    await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), t.name);
     const ids = await p.$$eval('.card', (cs) => cs.map((c) => c.dataset.entry));
     cards += ids.length;
     for (const id of ids) {
@@ -32,11 +36,20 @@ const { chromium } = require('playwright');
       await p.goBack(); await p.waitForSelector('.card');         // Back returns to the topic
     }
   }
+  await p.goto('http://localhost:8766/#/topic/t-shared'); await p.waitForSelector('.card');
   const href = await p.getAttribute('.card', 'href');              // a real link, so Ctrl-click opens a new tab
   const tab = await b.newPage(); await tab.goto('http://localhost:8766/' + href);
   const tabTitle = await tab.textContent('.note-page h2'); await tab.close();
 
-  await openT('Plant-only organelles');
+  // The cell explorer is only on the topic with the whole-cell notes ("Cells").
+  const explorerOn = [];
+  for (const t of STARTER.topics) {
+    await p.goto(`http://localhost:8766/#/topic/${t.id}`);
+    await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), t.name);
+    if (await p.locator('details.explorer').count()) explorerOn.push(t.name);
+  }
+  await p.goto('http://localhost:8766/#/topic/t-animal'); await p.waitForSelector('details.explorer');
+  await p.click('[data-cell=plant]');
   await p.click('.part[data-k=plasmodesmata] rect >> nth=0');
   const opened = await p.textContent('.note-page h2');
   const crumbNote = (await p.textContent('.crumbs')).replace(/\s+/g, ' ');
@@ -52,7 +65,8 @@ const { chromium } = require('playwright');
   const preset2 = await p.$$eval('.card', (c) => c.length);
 
   // Make a sub-topic inside a topic, then check the breadcrumb trail.
-  await openT('Animal cells'); await p.click('[data-act=sub-topic]');
+  await p.goto('http://localhost:8766/#/topic/t-animal'); await p.waitForFunction(() => document.querySelector('.bar h2')?.textContent.includes('Cells'));
+  await p.click('[data-act=sub-topic]');
   await p.fill('#blank-topic input', 'Cell division'); await p.click('#blank-topic button'); await p.waitForFunction((n) => document.querySelector('.bar h2')?.textContent.includes(n), 'Cell division');
   const crumbs = await p.textContent('.crumbs');
 
@@ -71,11 +85,13 @@ const { chromium } = require('playwright');
   const upgraded2 = await roots();
   await p.evaluate(() => localStorage.clear());
 
-  console.log('href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
+  const wantFigs = every.filter((e) => e.diagram).length, wantPhotos = every.filter((e) => e.image).length;
+  console.log('explorer on', explorerOn.join('|'), 'figs', figs, '/', wantFigs, 'photos', photos, '/', wantPhotos, 'href', href, 'tab', tabTitle, 'crumbNote', crumbNote, 'esc', backTo, 'tiles', tiles, 'crumbs', crumbs.replace(/\s+/g, ' '), 'upgraded2', upgraded2, 'topics', topics.join('|'), 'cards', cards, 'diagrams', figs, 'photos', photos, 'broken', broken, 'explorer', opened,
     'pasted', pasted.join('|'), 'preset', preset, preset2, 'upgraded', upgraded, 'errors', errs.length);
-  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Plant-only organelles › Plasmodesmata') &&
-    backTo.includes('Plant-only organelles') && tiles === 'Plant-only organelles|Shared eukaryotic organelles|Animal cells' && topics.length === 4 &&
-    crumbs.replace(/\s+/g, ' ').includes('Headstart › Animal cells › Cell division') && upgraded2 === 'Headstart|My topic' && cards === 14 && figs === 14 && photos === 6 && !broken && opened === 'Plasmodesmata' &&
+  const ok = href.startsWith('#/note/') && tabTitle && crumbNote.includes('Headstart › Organelles › Plant-Only Organelles › Plasmodesmata') &&
+    backTo.includes('Plant-Only Organelles') && tiles === 'Organelles|Cells' && explorerOn.join('|') === 'Cells' &&
+    crumbs.replace(/\s+/g, ' ').includes('Headstart › Cells › Cell division') && upgraded2 === 'Headstart|My topic' && cards === every.length &&
+    figs === wantFigs && photos === wantPhotos && !broken && opened === 'Plasmodesmata' &&
     pasted.length === 3 && pasted.includes('Active site') && preset === 6 && preset2 === 6 &&
     upgraded === 'Headstart|My topic' && !errs.length;
   console.log(ok ? 'biology ok' : 'biology FAILED ' + errs.join('; '));

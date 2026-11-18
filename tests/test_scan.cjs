@@ -34,7 +34,7 @@ const path = require('path');
       new_topics: [{ key: 'new-1', name: 'Cell transport', parent: 't-headstart' }, { key: 'new-2', name: 'Diffusion bits', parent: 'new-1' }, { key: 'new-3', name: 'Unused', parent: null }],
       notes: [
         { topic: 'new-2', title: 'Diffusion', definition: 'Particles spreading out.', key_points: ['high to low'], found_in: '', diagram: 'none', filled: false, drawing: { page: 1, x0: 100, y0: 100, x1: 500, y1: 400 } },
-        { topic: 't-animal', title: 'lysosomes', definition: 'ignored', key_points: ['from photo'], found_in: '', diagram: 'none', filled: false, drawing: null },
+        { topic: 't-shared', title: 'lysosomes', definition: 'ignored', key_points: ['from photo'], found_in: '', diagram: 'none', filled: false, drawing: null },
         { topic: 'nonsense', title: 'Stray', definition: 'Somewhere.', key_points: [], found_in: '', diagram: 'none', filled: true, drawing: null },
       ] } } });
   });
@@ -44,19 +44,26 @@ const path = require('path');
   await p.setInputFiles('#scan-files', path.join(__dirname, '..', 'img', 'er.jpg'));
   await p.click('#scan-go'); await p.waitForSelector('.plan-note');
   const thumbs = await p.locator('.pn-draw').count();
+  // Add a drawing the reader missed: drag a box on the page photo.
+  await p.click('[data-crop="1"]'); await p.waitForSelector('.crop-stage img');
+  const box = await p.locator('.crop-stage').boundingBox();
+  await p.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2); await p.mouse.down();
+  await p.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.6, { steps: 5 }); await p.mouse.up();
+  await p.click('[data-c="ok"]');
+  const picked = await p.locator('[data-thumb="1"] img').count();
   await p.click('#plan-go');
   await p.waitForFunction(() => document.querySelector('.bar h2')?.textContent.includes('Diffusion bits'));
   const crumbs = (await p.textContent('.crumbs')).replace(/\s+/g, ' ');
   const data = await p.evaluate(() => JSON.parse(localStorage.getItem('bio-study-notes-v1')));
   const byName = (n) => data.topics.find((t) => t.name === n);
   const diffusion = byName('Diffusion bits')?.entries[0];
-  const lyso = byName('Animal cells').entries.find((e) => e.title === 'Lysosomes');
+  const lyso = data.topics.find((t) => t.id === 't-shared').entries.find((e) => e.title === 'Lysosomes');
   const stray = byName('From my photos')?.entries[0];
   await p.evaluate(() => localStorage.clear());
-  console.log('worker', worker, '| free reader', freeOk, '| calls', calls, '| sent pages', sent.images.length, '| tree size', sent.tree.length, '| thumbs', thumbs, '| crumbs', crumbs,
+  console.log('worker', worker, '| free reader', freeOk, '| calls', calls, '| sent pages', sent.images.length, '| tree size', sent.tree.length, '| thumbs', thumbs, '| picked', picked, '| crumbs', crumbs,
     '| drawing kept', !!diffusion?.image, '| lyso def kept', lyso.definition.startsWith('Release'), '| lyso point', lyso.notes.includes('from photo'),
     '| stray', stray?.title, stray?.filled, '| unused topic made', !!byName('Unused'), '| errors', errs.length);
-  const ok = worker === '503,503,401,400,400,200,401,429' && freeOk && calls === 2 && sent.images.length === 1 && sent.tree.length >= 4 && thumbs === 1 &&
+  const ok = worker === '503,503,401,400,400,200,401,429' && freeOk && calls === 2 && sent.images.length === 1 && sent.tree.length >= 4 && thumbs === 1 && picked === 1 &&
     crumbs.includes('Headstart › Cell transport › Diffusion bits') && diffusion?.image.startsWith('data:image/jpeg') &&
     lyso.definition.startsWith('Release') && lyso.notes.includes('from photo') && stray?.title === 'Stray' && stray.filled === true &&
     !byName('Unused') && !errs.length;

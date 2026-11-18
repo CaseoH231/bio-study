@@ -53,7 +53,7 @@ const path = require('path');
   await p.click('[data-do]'); await p.waitForTimeout(200);
   const data = await p.evaluate(() => JSON.parse(localStorage.getItem('bio-study-notes-v1')));
   const ct = data.topics.find((t) => t.name === 'Cell transport');
-  const lyso = data.topics.find((t) => t.id === 't-animal').entries.find((e) => e.id === 'e-lyso');
+  const lyso = data.topics.flatMap((t) => t.entries).find((e) => e.id === 'e-lyso');
   await p.fill('#bot-input', 'Show me the Golgi body'); await p.keyboard.press('Enter');
   await p.waitForFunction(() => document.querySelector('.note-page h2')?.textContent === 'Golgi body');
   await p.fill('#bot-input', 'Quiz me on animal cells'); await p.keyboard.press('Enter');

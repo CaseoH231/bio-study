@@ -87,8 +87,8 @@ Without GitHub, `tools/build_bio_worker.py` packs the app into one Worker script
 index.html            page layout (sidebar + main area)
 style.css             all the styling (Coop Ledger-style layout)
 app.js                everything the app does: topics, cards, dialogs, paste, flashcards, saving
-data.js               the notes from my notebook (the starting notes)
-img/                  photos of my hand-drawn diagrams
+data.js               the starting notes: my notes as of 18 Nov (notebook + scanner + study helper)
+img/                  photos of my hand-drawn diagrams (img/notes/: drawings cut out by the scanner)
 img/ref/              textbook diagrams from Wikimedia Commons (credits in refs.js)
 refs.js               which textbook diagram goes with which note, and who made it
 presets.js            the ready-made topics

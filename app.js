@@ -126,7 +126,8 @@ function render() {
   if (current === HOME) { main.innerHTML = dashboard(); return; }
   const t = topicOf(current);
   const subs = kids(t.id);
-  const hasCells = notesIn(t).some(({ e }) => ['nucleus', 'membrane', 'chloroplast', 'mitochondria', 'plasmid', 'wall', 'plasmodesmata'].includes(e.diagram));
+  // The cell explorer lives with the whole-cell notes (your "Cells" topic) – it follows the notes, not the topic's name.
+  const hasCells = t.entries.some((e) => ['animalcell', 'plantcell'].includes(e.diagram));
   const total = notesIn(t).length;
   main.innerHTML = `
     <nav class="crumbs" aria-label="You are here"><a href="#/">Dashboard</a>${ancestors(t).map((a) =>
@@ -206,7 +207,7 @@ function enterTopic(id) {
   if (t) {
     if (kids(t.id).length) { openFolders.add(t.id); saveOpen(); }
     const own = t.entries.length ? t.entries : notesIn(t).map((x) => x.e);
-    cellKind = own.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
+    cellKind = own.some((e) => e.diagram === 'animalcell') ? 'animal' : own.some((e) => ['wall', 'chloroplast', 'vacuole', 'plasmodesmata', 'plantcell'].includes(e.diagram)) ? 'plant' : 'animal';
   }
 }
 
@@ -732,6 +733,52 @@ function nameKeys(title) {
 }
 const sameNote = (a, b) => [...nameKeys(a)].some((k) => nameKeys(b).has(k));
 
+// Drag a box over the page photo to choose (or fix) the drawing for a note. Calls done(drawing or null), or nothing on cancel.
+function pickDrawing(pages, note, done) {
+  let page = Math.min(pages.length, Math.max(1, note.drawing?.page || 1)) - 1;
+  let box = note.drawing ? { ...note.drawing } : null;
+  const ov = document.createElement('div');
+  ov.className = 'crop-ov';
+  ov.innerHTML = `<div class="crop-panel"><div class="crop-head"><b>Drag a box around the drawing for “${esc(note.title)}”</b>
+      ${pages.length > 1 ? `<div class="tabs">${pages.map((_, k) => `<button type="button" data-page="${k}">Page ${k + 1}</button>`).join('')}</div>` : ''}</div>
+    <div class="crop-stage"><img alt="Page photo"><div class="crop-sel" hidden></div></div>
+    <div class="row"><button type="button" class="danger" data-c="none">No drawing</button><span class="grow"></span>
+      <button type="button" data-c="cancel">Cancel</button><button type="button" class="primary" data-c="ok">Use this</button></div></div>`;
+  dlg.appendChild(ov);
+  const img = $('.crop-stage img', ov), sel = $('.crop-sel', ov);
+  const show = () => {
+    img.src = pages[page].src;
+    $$('[data-page]', ov).forEach((b) => b.classList.toggle('on', +b.dataset.page === page));
+    const b = box && box.page === page + 1 ? box : null;
+    sel.hidden = !b;
+    if (b) Object.assign(sel.style, { left: `${b.x0 / 10}%`, top: `${b.y0 / 10}%`, width: `${(b.x1 - b.x0) / 10}%`, height: `${(b.y1 - b.y0) / 10}%` });
+  };
+  const at = (ev) => {
+    const r = img.getBoundingClientRect();
+    return [Math.round(Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * 1000), Math.round(Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)) * 1000)];
+  };
+  let start = null;
+  const stage = $('.crop-stage', ov);
+  stage.addEventListener('pointerdown', (ev) => { ev.preventDefault(); start = at(ev); stage.setPointerCapture(ev.pointerId); });
+  stage.addEventListener('pointermove', (ev) => {
+    if (!start) return;
+    const [x, y] = at(ev);
+    box = { page: page + 1, x0: Math.min(start[0], x), y0: Math.min(start[1], y), x1: Math.max(start[0], x), y1: Math.max(start[1], y) };
+    show();
+  });
+  stage.addEventListener('pointerup', () => { start = null; });
+  ov.addEventListener('click', (ev) => {
+    const pg = ev.target.closest('[data-page]');
+    if (pg) { page = +pg.dataset.page; return show(); }
+    const c = ev.target.closest('[data-c]')?.dataset.c;
+    if (!c) return;
+    ov.remove();
+    if (c === 'none') done(null);
+    if (c === 'ok') done(box && box.x1 - box.x0 > 20 && box.y1 - box.y0 > 20 ? box : note.drawing || null);
+  });
+  show();
+}
+
 // Show what was found, let you untick or rename things, then add it all.
 function reviewPlan(plan, pages, reader) {
   const known = new Set(db.topics.map((t) => t.id));
@@ -745,6 +792,8 @@ function reviewPlan(plan, pages, reader) {
     notes.forEach((n) => { if (!valid(n.topic)) n.topic = 'new-photos'; });
   }
   const drawings = notes.map((n) => (n.drawing && pages[n.drawing.page - 1] ? cropDrawing(pages[n.drawing.page - 1], n.drawing) : ''));
+  const thumb = (i) => `${drawings[i] ? `<img class="pn-draw" src="${drawings[i]}" alt="Your drawing">` : ''}
+    <button type="button" class="link" data-crop="${i}">${drawings[i] ? 'Adjust drawing' : '+ Add a drawing'}</button>`;
   const newByKey = Object.fromEntries(fresh.map((nt) => [nt.key, nt]));
   const pathTo = (id, seen = new Set()) => {
     if (known.has(id)) return pathOf(topicOf(id));
@@ -772,12 +821,23 @@ function reviewPlan(plan, pages, reader) {
             <div class="where">→ ${esc(pathTo(n.topic))}</div>
             ${n.definition && !old?.definition ? `<p>${esc(n.definition)}</p>` : ''}
             ${n.key_points?.length ? `<ul>${n.key_points.map((k) => `<li>${esc(k)}</li>`).join('')}</ul>` : ''}</div>
-          ${drawings[i] ? `<img class="pn-draw" src="${drawings[i]}" alt="Your drawing">` : ''}</label>`;
+          <div class="pn-side" data-thumb="${i}">${thumb(i)}</div></label>`;
       }).join('')}</div>
     </div>
     <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="plan-go">Add ${plural(notes.length, 'note')}</button></div>`, 'small plan-dlg');
 
   const ticked = () => $$('.plan-note input:checked', dlg).map((x) => +x.dataset.i);
+  $('.plan-list', dlg).addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-crop]');
+    if (!b) return;
+    ev.preventDefault();
+    const i = +b.dataset.crop;
+    pickDrawing(pages, notes[i], (drawing) => {
+      notes[i].drawing = drawing;
+      drawings[i] = drawing ? cropDrawing(pages[drawing.page - 1], drawing) : '';
+      $(`[data-thumb="${i}"]`, dlg).innerHTML = thumb(i);
+    });
+  });
   $('.plan-list', dlg).addEventListener('change', () => { const k = ticked().length; $('#plan-go').textContent = `Add ${plural(k, 'note')}`; $('#plan-go').disabled = !k; });
   $('#plan-go').onclick = () => {
     const chosen = ticked();
