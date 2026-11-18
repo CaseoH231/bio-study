@@ -195,7 +195,7 @@ function dashboard() {
     <section class="hero"><div class="hello"><h2>${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</h2>
       <p>${notes.length ? `You have ${notes.length} notes across ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}. Ready for a quick quiz?` : 'Add your first notes, or pick a ready-made topic.'}</p>
       <div class="row"><button class="primary ai-only" data-act="scan">📷 Scan a photo of my notes</button>${notes.length ? '<button data-act="cards">Start flashcards</button>' : ''}</div></div>
-      <div class="hero-art">${cellSVG('plant')}<small>Click a part of the cell</small></div></section>
+      </section>
     <div class="stats">${stat(notes.length, 'notes')}${stat(db.topics.length, 'topics')}${stat(figs, 'with a diagram')}${stat(points, 'key points')}${stat(db.rounds || 0, 'flashcard rounds done')}</div>
     <h3 class="sect-h">Topics</h3>
     ${db.topics.length ? `<div class="tgrid">${kids().map(folderCard).join('')}
@@ -333,10 +333,10 @@ $('#main').addEventListener('keydown', (ev) => {
   if (p && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openPart(p.dataset.k, $('title', p).textContent); }
 });
 $('#main').addEventListener('mouseover', (ev) => {
-  const tip = $('#ex-tip') || $('.hero-art small');
+  const tip = $('#ex-tip');
   if (!tip) return;
   const p = ev.target.closest('.part');
-  tip.textContent = p ? `${$('title', p).textContent} – click to open` : tip.closest('.hero-art') ? 'Click a part of the cell' : ' ';
+  tip.textContent = p ? `${$('title', p).textContent} – click to open` : ' ';
 });
 
 function newTopic(name, parent = null) {

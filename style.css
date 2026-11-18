@@ -82,9 +82,6 @@ main { padding: 32px clamp(16px, 4vw, 48px) 60px; max-width: 1180px; width: 100%
 .hello .primary { background: var(--pri); border-color: var(--pri); color: #fff; }
 .hello .primary:hover { background: #2a6340; border-color: #2a6340; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }
-.hero-art { flex: 1 1 280px; max-width: 420px; text-align: center; }
-.hero-art svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 10px rgb(40 70 10 / .25)); }
-.hero-art small { color: var(--hero-sub); font-size: 13px; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
 .stat b { display: block; font: 600 32px/1.1 var(--serif); color: var(--stat); }
