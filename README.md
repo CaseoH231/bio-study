@@ -70,6 +70,16 @@ app keep their own notes; **Get the latest published notes** swaps theirs for yo
 2. Cloudflare → **Workers & Pages → bio-study → Settings → Variables and Secrets → Add**: type **Secret**, name
    `GITHUB_TOKEN`, value: the token. (`APP_PASSCODE` must be set too – that's the passcode it asks for.)
 
+## Friends getting your latest notes
+
+When a friend opens the app, it brings in anything you've published since their last visit (they can turn this off in
+**Backup & reset → Settings…**, and get it any time with **Get Donut-Man's latest notes**). Your own device never does this.
+- **Merged (default):** their notes are kept. Your new notes are added, your updates replace their copy only if they hadn't
+  edited it, notes they deleted stay deleted, and their own topic with the same name and place as yours is folded into yours.
+- **Separate (Settings → "Keep my notes separate"):** two sections – **Personal** (their own notes, plus any of yours they'd
+  edited) and **Donut-Man's notes** (your latest published notes, replaced each time).
+The rules are in `sync.js`.
+
 ## Run it on your computer
 Open the folder in VS Code → right-click `index.html` → **Open with Live Server**.
 
@@ -93,6 +103,7 @@ img/slides/           diagrams from the lesson slides
 img/ref/              textbook diagrams from Wikimedia Commons (credits in refs.js)
 refs.js               which textbook diagram goes with which note, and who made it
 presets.js            the ready-made topics
+sync.js               brings published notes into a friend's notes (merge or separate)
 upgrades.js           rearranges saved notes when the starting layout changes (moves only, never edits notes)
 diagrams.js           the coloured, labelled diagrams and the clickable cells
 sw.js                 lets the installed app work offline

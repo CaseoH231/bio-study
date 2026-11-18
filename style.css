@@ -384,3 +384,9 @@ code { background: var(--panel2); padding: 1px 6px; border-radius: 6px; font-siz
 .crop-stage { position: relative; align-self: center; touch-action: none; cursor: crosshair; user-select: none; min-height: 0; overflow: hidden; }
 .crop-stage img { display: block; max-width: 100%; max-height: calc(100vh - 170px); pointer-events: none; }
 .crop-sel { position: absolute; border: 3px solid var(--leaf); background: rgb(166 216 70 / .18); box-shadow: 0 0 0 9999px rgb(0 0 0 / .35); pointer-events: none; }
+
+/* settings */
+label.check { display: flex !important; gap: 12px; align-items: flex-start; font-weight: 400 !important; cursor: pointer; }
+label.check input { margin-top: 4px; width: 18px; height: 18px; flex: none; accent-color: var(--pri); }
+label.check span { display: grid; gap: 2px; }
+label.check small { color: var(--muted); }

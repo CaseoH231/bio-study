@@ -57,8 +57,40 @@ const path = require('path');
   await p.reload(); await p.waitForTimeout(500);
   const keeps = await p.$$eval('#topics .topic .nm', (x) => x.map((e) => e.textContent).join('|'));
   await p.evaluate(() => localStorage.clear());
+
+  // A friend (never published, no passcode) with their own notes, opening the app after the owner publishes.
+  const f = await (await b.newContext()).newPage(); f.on('pageerror', (e) => errs.push(e.message));
+  let pubNow = { version: 1, starter: 7, publishedAt: 'v1', topics: [
+    { id: 'h', name: 'Headstart', color: '#7c3aed', entries: [] },
+    { id: 'o', parent: 'h', name: 'Organelles', color: '#2563eb', entries: [{ id: 'n1', title: 'Nucleus', definition: 'Controls the cell', notes: [] }] }] };
+  await f.route('**/api/published', (r) => r.fulfill({ json: pubNow }));
+  await f.goto('http://localhost:8766/'); await f.waitForFunction(() => document.querySelector('#topics')?.textContent.includes('Headstart'));
+  await f.evaluate(() => { const d = JSON.parse(localStorage.getItem('bio-study-notes-v1'));
+    d.topics.push({ id: 'mine', name: 'My own', color: '#000', entries: [{ id: 'm1', title: 'My note', definition: 'mine', notes: [] }] });
+    d.topics.find((t) => t.id === 'o').entries[0].definition = 'MY VERSION';
+    localStorage.setItem('bio-study-notes-v1', JSON.stringify(d)); });
+  pubNow = { ...pubNow, publishedAt: 'v2', topics: [pubNow.topics[0], { ...pubNow.topics[1], entries: [...pubNow.topics[1].entries, { id: 'n2', title: 'Ribosomes', definition: 'Make proteins', notes: [] }] }] };
+  await f.reload(); await f.waitForSelector('#toast.show');
+  const toastText = await f.textContent('#toast');
+  const fd = () => f.evaluate(() => JSON.parse(localStorage.getItem('bio-study-notes-v1')));
+  let d1 = await fd();
+  const ent = (d, id) => d.topics.flatMap((t) => t.entries).find((e) => e.id === id);
+  const merged = !!ent(d1, 'n2') && ent(d1, 'n1').definition === 'MY VERSION' && !!ent(d1, 'm1');
+  // Settings → keep separate.
+  await f.click('.more:not(.topic-menu) summary'); await f.click('#btn-settings'); await f.check('#set-separate'); await f.click('#set-save');
+  await f.waitForFunction(() => document.querySelector('#topics')?.textContent.includes('Personal'));
+  const rootsSep = await f.$$eval('#topics > .node > .topic .nm', (x) => x.map((e) => e.textContent).join('|'));
+  d1 = await fd();
+  const sepOk = ent(d1, 'dm-n1')?.definition === 'Controls the cell' && ent(d1, 'n1').definition === 'MY VERSION' && !!ent(d1, 'm1');
+  // …and back to merged.
+  await f.click('.more:not(.topic-menu) summary'); await f.click('#btn-settings'); await f.uncheck('#set-separate'); await f.click('#set-save');
+  await f.waitForFunction(() => !document.querySelector('#topics')?.textContent.includes('Personal'));
+  const rootsBack = await f.$$eval('#topics > .node > .topic .nm', (x) => x.map((e) => e.textContent).join('|'));
+  console.log('friend toast', toastText, '| merged', merged, '| separate', rootsSep, sepOk, '| back', rootsBack);
+  const friendOk = merged && /1 new/.test(toastText) && /kept your version of 1/.test(toastText) && rootsSep === "Personal|Donut-Man's notes" && sepOk && rootsBack === 'Headstart|My own';
+
   console.log('worker', codes, worker, '| new visitor', newVisitor, '| published', published, '| existing keeps', keeps, '| errors', errs.length);
-  const ok = worker && newVisitor === 'Dashboard|Enzymes – é ✓' && published && keeps === 'Dashboard|My own' && !errs.length;
+  const ok = friendOk && worker && newVisitor === 'Dashboard|Enzymes – é ✓' && published && keeps === 'Dashboard|My own' && !errs.length;
   console.log(ok ? 'publish ok' : 'publish FAILED ' + errs.join('; '));
   await b.close();
 })();

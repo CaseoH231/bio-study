@@ -1,6 +1,7 @@
 import { STARTER } from './data.js';
 import { PRESETS } from './presets.js';
 import { organiseHeadstart } from './upgrades.js';
+import { mergeImport, separateImport, unseparate, OWNER_NAME } from './sync.js';
 import { REFS } from './refs.js';
 import { DIAGRAMS, DIAGRAM_WORDS, CELLS, diagramSVG, cellSVG } from './diagrams.js';
 
@@ -1191,13 +1192,65 @@ const fetchPublished = async () => {
     return d && Array.isArray(d.topics) ? d : null;
   } catch { return null; }
 };
-async function useLatestForNewVisitor() {
-  if (!firstVisit) return;
-  const d = await fetchPublished();
-  if (!d || !firstVisit) return; // they started making notes meanwhile – keep theirs
-  delete d.publishedAt;
-  db = d; upgradeStarter(db); route();
+// Settings for this device. The owner's device (it has published, or knows the passcode) never pulls notes in.
+const settings = () => ({ autoUpdate: true, separate: false, ...(db.settings || {}) });
+const isOwner = () => !!db.owner || !!passcode();
+
+// Bring the owner's latest published notes in – merged into theirs, or into a separate section (see sync.js).
+function applyPublished(pub) {
+  if (settings().separate) {
+    const c = separateImport(db, pub);
+    return `Updated ${OWNER_NAME}'s notes (${plural(c.notes, 'note')})`;
+  }
+  const st = mergeImport(db, pub, sameNote);
+  const bits = [st.added && `${st.added} new`, st.updated && `${st.updated} updated`, st.removed && `${st.removed} removed`,
+    st.kept && `kept your version of ${st.kept}`].filter(Boolean);
+  return bits.length ? `${OWNER_NAME}'s latest notes: ${bits.join(', ')}` : `You already have ${OWNER_NAME}'s latest notes`;
 }
+
+async function syncWithPublished({ manual = false } = {}) {
+  if (!manual && (isOwner() || !settings().autoUpdate) && !firstVisit) return;
+  const pub = await fetchPublished();
+  if (!pub) { if (manual) toast('There are no published notes yet (or you’re offline).'); return; }
+  if (firstVisit && !manual) { // a brand-new visitor simply starts with the published notes
+    if (!firstVisit) return;
+    db = { version: 1, starter: pub.starter || STARTER.starter, topics: [] };
+    mergeImport(db, pub, sameNote); upgradeStarter(db); save(); route();
+    return;
+  }
+  if (!manual && db.sync?.publishedAt && db.sync.publishedAt === pub.publishedAt) return; // nothing new
+  const msg = applyPublished(pub);
+  save(); route(); toast(msg);
+}
+
+function openSettings() {
+  const s = settings();
+  openDialog(`<div class="dlg-head"><h2 class="grow">Settings</h2><button data-close aria-label="Close">✕</button></div>
+    <div class="dlg-body form">
+      <label class="check"><input type="checkbox" id="set-auto" ${s.autoUpdate ? 'checked' : ''}>
+        <span><b>Get ${OWNER_NAME}'s latest notes automatically</b><small>When you open the app, any notes ${OWNER_NAME} has published since last time are brought in.</small></span></label>
+      <label class="check"><input type="checkbox" id="set-separate" ${s.separate ? 'checked' : ''}>
+        <span><b>Keep my notes separate from ${OWNER_NAME}'s notes</b><small>Off: ${OWNER_NAME}'s notes are merged into yours – your notes and your edits are kept, and his
+          updates go into the matching topics. On: two sections, <b>Personal</b> (your own topics and notes) and <b>${OWNER_NAME}'s notes</b>,
+          which is replaced with his latest version each time – so put your own notes in Personal.</small></span></label>
+      ${isOwner() ? '<p class="hint">This is the owner’s device, so it never pulls published notes in.</p>' : ''}
+    </div>
+    <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="set-save">Save</button></div>`, 'small');
+  $('#set-save').onclick = async () => {
+    const next = { autoUpdate: $('#set-auto').checked, separate: $('#set-separate').checked };
+    const changed = next.separate !== s.separate;
+    db.settings = next;
+    if (changed) {
+      const pub = await fetchPublished();
+      if (!pub) { db.settings = { ...next, separate: s.separate }; return toast('You need to be online to change this.'); }
+      if (next.separate) separateImport(db, pub);
+      else { unseparate(db); mergeImport(db, pub, sameNote); }
+    }
+    save(); dlg.close(); go('#/');
+    toast(changed ? (next.separate ? `Your notes are in Personal; ${OWNER_NAME}'s are in their own section` : `${OWNER_NAME}'s notes are merged into yours`) : 'Saved');
+  };
+}
+$('#btn-settings').onclick = () => { $('.more').open = false; openSettings(); };
 $('#btn-publish').onclick = () => {
   $('.more').open = false;
   const count = all().length;
@@ -1209,9 +1262,11 @@ $('#btn-publish').onclick = () => {
     <div class="dlg-foot"><span class="grow"></span><button data-close>Cancel</button><button class="primary" id="pub-go">Publish</button></div>`, 'small');
   $('#pub-go').onclick = async () => {
     $('#pub-go').disabled = true; $('#pub-go').textContent = 'Publishing…';
-    const { res, data, cancelled } = await callApi('api/publish', { notes: db });
+    const { sync, settings: _s, owner, ...notes } = db;
+    const { res, data, cancelled } = await callApi('api/publish', { notes });
     if (cancelled) return dlg.close();
     if (res?.ok && data.ok) {
+      db.owner = true; save();
       openDialog(`<div class="dlg-head"><h2 class="grow">Published ✓</h2><button data-close aria-label="Close">✕</button></div>
         <div class="dlg-body"><p>${plural(data.count, 'note')} saved to GitHub.${data.commit ? ` <a href="${esc(data.commit)}" target="_blank" rel="noopener">See it on GitHub</a>.` : ''}</p></div>
         <div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
@@ -1225,14 +1280,7 @@ $('#btn-publish').onclick = () => {
       <div class="dlg-body"><p>${esc(why)}</p></div><div class="dlg-foot"><span class="grow"></span><button data-close>Close</button></div>`, 'small');
   };
 };
-$('#btn-latest').onclick = async () => {
-  $('.more').open = false;
-  const d = await fetchPublished();
-  if (!d) return toast('There are no published notes yet (or you’re offline).');
-  if (!confirm(`Replace the notes on this device with the latest published notes${d.publishedAt ? ` (from ${new Date(d.publishedAt).toLocaleDateString()})` : ''}? Download a backup first if you want to keep yours.`)) return;
-  delete d.publishedAt;
-  db = d; upgradeStarter(db); save(); go('#/'); toast('Loaded the latest published notes');
-};
+$('#btn-latest').onclick = () => { $('.more').open = false; syncWithPublished({ manual: true }); };
 
 $('#btn-reset').onclick = () => {
   if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;
@@ -1252,4 +1300,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.ser
 
 route();
 checkAI();
-useLatestForNewVisitor();
+syncWithPublished();
