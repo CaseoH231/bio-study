@@ -182,31 +182,30 @@ function folderCard(t) {
     <div class="chips">${inside.slice(0, 5).map((x) => `<span class="chip">${esc(x)}</span>`).join('')}${inside.length > 5 ? `<span class="chip">+${inside.length - 5} more</span>` : ''}</div></a>`;
 }
 
-const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+const listRow = ({ e, t }) => `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`;
+// A short list with the rest tucked behind "Show N more".
+const shortList = (rows, show = 5) => `<ul class="list">${rows.slice(0, show).map(listRow).join('')}</ul>${rows.length > show
+  ? `<details class="more-list"><summary>Show ${rows.length - show} more</summary><ul class="list">${rows.slice(show).map(listRow).join('')}</ul></details>` : ''}`;
 
 function dashboard() {
   const notes = all();
   const hr = new Date().getHours();
-  const figs = notes.filter(({ e }) => DIAGRAMS[e.diagram] || e.image).length;
-  const points = notes.reduce((n, { e }) => n + (e.notes?.length || 0), 0);
   const recent = [...notes].reverse().slice(0, 6);
   const toCheck = notes.filter(({ e }) => e.filled);
-  return `<div class="bar"><h2>Dashboard</h2><div class="tools"><button data-act="new-topic">+ New topic</button><button class="primary" data-act="add">+ Add note</button></div></div>
-    <section class="hero"><div class="hello"><h2>${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</h2>
-      <p>${notes.length ? `You have ${notes.length} notes across ${db.topics.length} topic${db.topics.length === 1 ? '' : 's'}. Ready for a quick quiz?` : 'Add your first notes, or pick a ready-made topic.'}</p>
-      <div class="row"><button class="primary ai-only" data-act="scan">📷 Scan a photo of my notes</button>${notes.length ? '<button data-act="cards">Start flashcards</button>' : ''}</div></div>
-      </section>
-    <div class="stats">${stat(notes.length, 'notes')}${stat(db.topics.length, 'topics')}${stat(figs, 'with a diagram')}${stat(points, 'key points')}${stat(db.rounds || 0, 'flashcard rounds done')}</div>
+  const facts = notes.length ? [plural(notes.length, 'note'), plural(db.topics.length, 'topic'), db.rounds ? plural(db.rounds, 'flashcard round') : '']
+    .filter(Boolean).join(' · ') : 'Add your first notes, or pick a ready-made topic.';
+  return `<div class="hello"><div><p class="eyebrow">${hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</p>
+      <h2>Your biology notes</h2><p class="lead">${facts}</p></div>
+      <div class="tools">${notes.length ? '<button class="dark wide-only" data-act="cards">✦ Flashcards</button>' : ''}<button class="ai-only wide-only" data-act="scan">📷 Scan notes</button>
+        <button class="primary" data-act="add">+ Add note</button></div></div>
     <h3 class="sect-h">Topics</h3>
     ${db.topics.length ? `<div class="tgrid">${kids().map(folderCard).join('')}
       <button class="tcard add" data-act="new-topic"><h3>+ New topic</h3><span class="tn">Ready-made or blank</span></button></div>`
     : '<div class="empty"><p>You have no topics yet.</p><button class="primary" data-act="new-topic">+ New topic</button></div>'}
-    ${toCheck.length ? `<h3 class="sect-h">Check these against your notes <small class="where">(${toCheck.length})</small></h3>
-      <p class="lead">I filled in these definitions for you. Open one and press Edit to put it in your own words – the yellow tag goes away when you save.</p>
-      <div class="card-list"><ul class="list">${toCheck.map(({ e, t }) =>
-      `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`).join('')}</ul></div>` : ''}
-    ${recent.length ? `<h3 class="sect-h">Latest notes</h3><div class="card-list"><ul class="list">${recent.map(({ e, t }) =>
-      `<li><a class="lrow" href="${hrefNote(e.id)}"><b style="color:${colorOf(e, t)}">${esc(e.title)}</b><span>${esc(e.definition)}</span><small>${esc(pathOf(t))}</small></a></li>`).join('')}</ul></div>` : ''}`;
+    ${recent.length || toCheck.length ? `<div class="dash-cols">
+      ${recent.length ? `<section class="panel"><h3>Latest notes</h3>${shortList(recent, 6)}</section>` : ''}
+      ${toCheck.length ? `<section class="panel"><h3>Check these <span class="count">${toCheck.length}</span></h3>
+        <p>I filled these in for you. Open one and press Edit to put it in your own words.</p>${shortList(toCheck, 5)}</section>` : ''}</div>` : ''}`;
 }
 
 // ---------- pages have addresses, so Back works and Ctrl-click opens a real new tab ----------
@@ -217,12 +216,12 @@ function go(hash) { if (location.hash === hash || (hash === '#/' && !location.ha
 function route() {
   const [, kind, raw] = location.hash.match(/^#\/(topic|note)\/(.+)$/) || [];
   const id = raw && decodeURIComponent(raw);
-  query = ''; $('#search').value = ''; noteId = null;
+  query = ''; $('#search').value = ''; $('#msearch').value = ''; noteId = null;
   if (kind === 'note' && find(id)) { noteId = id; current = find(id).t.id; }
   else if (kind === 'topic' && topicOf(id)) enterTopic(id);
   else current = HOME;
   if (dlg.open) dlg.close();
-  render(); window.scrollTo({ top: 0 });
+  render(); setNav(false); window.scrollTo({ top: 0 });
 }
 window.addEventListener('hashchange', route);
 
@@ -1164,6 +1163,31 @@ $('#btn-paste').onclick = openPaste;
 $('#btn-scan').onclick = openScan;
 $('#btn-cards').onclick = openCards;
 $('#search').addEventListener('input', (ev) => { query = ev.target.value.trim(); render(); });
+
+// ---------- phone: slide-out topics drawer and bottom tab bar ----------
+function setNav(open) {
+  document.body.classList.toggle('nav-open', open);
+  $('#nav-btn').setAttribute('aria-expanded', String(open));
+  document.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.classList.toggle('on',
+    open ? b.dataset.tab === 'topics' : b.dataset.tab === 'home' && current === HOME && !noteId && !query));
+}
+$('#nav-btn').onclick = () => setNav(!document.body.classList.contains('nav-open'));
+$('#scrim').onclick = () => setNav(false);
+$('#msearch').addEventListener('input', (ev) => { query = ev.target.value.trim(); render(); });
+document.querySelector('.tabbar').addEventListener('click', (ev) => {
+  const tab = ev.target.closest('[data-tab]')?.dataset.tab;
+  if (tab !== 'topics') setNav(false);
+  if (tab === 'home') go('#/');
+  else if (tab === 'topics') setNav(!document.body.classList.contains('nav-open'));
+  else if (tab === 'cards') openCards();
+  else if (tab === 'scan') openScan();
+  else if (tab === 'ask') toggleHelper();
+});
+// Picking a topic or tool in the drawer closes it.
+$('#side').addEventListener('click', (ev) => {
+  if (ev.target.closest('a[href], .side-tools > button, .menu button') && !ev.target.closest('[data-toggle]')) setNav(false);
+});
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && document.body.classList.contains('nav-open')) setNav(false); });
 $('#btn-export').onclick = () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));

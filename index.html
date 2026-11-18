@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bio Study Notes</title>
   <meta name="description" content="Organise your biology notes into topics with coloured, labelled diagrams and flashcards.">
-  <meta name="theme-color" content="#1d4a2c">
+  <meta name="theme-color" content="#1b4429">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
@@ -14,8 +14,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header class="appbar">
+    <button id="nav-btn" aria-label="Show topics" aria-expanded="false">☰</button>
+    <a class="brand" href="./"><b>Bio Study</b></a>
+    <input id="msearch" type="search" placeholder="Search notes…" aria-label="Search your notes">
+  </header>
   <div class="shell">
-    <aside>
+    <aside id="side">
       <a class="brand" href="./"><img src="icons/icon.svg" alt="" width="38" height="38"><div><h1>Bio Study Notes</h1><small id="sub"></small></div></a>
       <input id="search" type="search" placeholder="Search your notes…" aria-label="Search your notes">
       <nav id="topics" aria-label="Topics"></nav>
@@ -41,6 +46,14 @@
     </aside>
     <main id="main"></main>
   </div>
+  <div class="scrim" id="scrim"></div>
+  <nav class="tabbar" aria-label="Quick links">
+    <button data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button data-tab="topics"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Topics</button>
+    <button data-tab="cards"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM9 8h6M9 12h6M9 16h3"/></svg>Flashcards</button>
+    <button data-tab="scan" class="ai-only"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h2l2-2h4l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>Scan</button>
+    <button data-tab="ask" class="ai-only"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>Ask</button>
+  </nav>
   <button id="bot-btn" class="ai-only" aria-label="Open the study helper"><span>✦</span> Ask</button>
   <section id="bot" hidden aria-label="Study helper">
     <div class="bot-head"><b>✦ Study helper</b><small>Changes only happen when you press “Do it”</small><button id="bot-close" aria-label="Close">✕</button></div>

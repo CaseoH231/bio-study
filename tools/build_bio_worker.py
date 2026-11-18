@@ -4,6 +4,7 @@ import base64, json, mimetypes, os, sys
 
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 out = sys.argv[1]
+name = sys.argv[2] if len(sys.argv) > 2 else 'bio-study'  # e.g. bio-study-preview for a trial copy
 skip = {'wrangler.jsonc', '.assetsignore', '_headers', 'README.md', 'CLAUDE.md', '.gitignore', 'package.json', 'package-lock.json'}
 types = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html; charset=utf-8', '.svg': 'image/svg+xml',
          '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json'}
@@ -35,5 +36,5 @@ export default {
 """ % (json.dumps(os.path.abspath(os.path.join(root, "worker", "api.js"))), json.dumps(files))
 os.makedirs(out, exist_ok=True)
 open(os.path.join(out, 'worker.js'), 'w').write(worker)
-open(os.path.join(out, 'wrangler.jsonc'), 'w').write(json.dumps({'name': 'bio-study', 'main': 'worker.js', 'compatibility_date': '2026-10-01', 'compatibility_flags': ['nodejs_compat'], 'ai': {'binding': 'AI'}, 'workers_dev': True}, indent=2))
+open(os.path.join(out, 'wrangler.jsonc'), 'w').write(json.dumps({'name': name, 'main': 'worker.js', 'compatibility_date': '2026-10-01', 'compatibility_flags': ['nodejs_compat'], 'ai': {'binding': 'AI'}, 'workers_dev': True}, indent=2))
 print(len(files) - 1, 'files packed,', len(worker) // 1024, 'KB')
