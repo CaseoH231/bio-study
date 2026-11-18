@@ -218,11 +218,16 @@ export const STARTER = {
           "title": "Plasma membrane",
           "definition": "The cell surface membrane.",
           "notes": [
-            "Also called the plasma membrane"
+            "Also called the cell surface membrane",
+            "Made of: 1. phospholipid bilayer, 2. transmembrane proteins, 3. interior protein, 4. surface markers",
+            "Water & other small things can wiggle through the layer into the cell",
+            "Small hydrophobic molecules and small uncharged polar molecules get through easily (\"ez\")",
+            "Ions & large uncharged polar molecules need special ways to get in & out, while the others can squeeze through",
+            "Cholesterol makes the membrane more or less flexible – lets things in & out easier"
           ],
           "found": "",
           "diagram": "membrane",
-          "image": ""
+          "image": "img/notes/phospholipid-bilayer.jpg"
         },
         {
           "id": "mwlfuym8cnhp8",
@@ -247,9 +252,9 @@ export const STARTER = {
         {
           "id": "mwlfuym8nla8s",
           "title": "Integral protein",
-          "definition": "A protein that is part of the membrane.",
+          "definition": "A protein that goes all the way through both layers of the membrane.",
           "notes": [
-            "Also called intrinsic protein - goes all the way through both layers"
+            "Also called an intrinsic protein (intrinsic = inside)"
           ],
           "found": "",
           "diagram": "",
@@ -258,9 +263,9 @@ export const STARTER = {
         {
           "id": "mwlfuym8qccqj",
           "title": "Extrinsic protein",
-          "definition": "A protein that is part of the way into the membrane, through 1 layer.",
+          "definition": "A protein that goes part of the way into the membrane, through 1 layer.",
           "notes": [
-            "Also called extrinsic - outside"
+            "Extrinsic = outside"
           ],
           "found": "",
           "diagram": "",
@@ -269,13 +274,11 @@ export const STARTER = {
         {
           "id": "mwlfuym8ph1nr",
           "title": "Phospholipid bilayer",
-          "definition": "A structure made of phospholipids arranged in a bilayer.",
+          "definition": "Phospholipids arranged in two layers – the basic structure of the membrane.",
           "notes": [
-            "Fluid mosaic model",
-            "Globular proteins in between",
-            "Cholesterol makes membrane more or less flexible - lets things in & out easier",
-            "Others are: - steroids - glycolipids",
-            "Parts (from my diagram): outside, inside, water, water, water, small hydrophobic molecules, small hydrophilic polar molecule, ions, large polar molecules, ions, large"
+            "Fluid mosaic model: phospholipids arranged in a bilayer, with globular proteins in between",
+            "Heads (hydrophilic, \"water liker\") face the water on the outside and inside; tails (hydrophobic, \"water hater\") face each other in the middle",
+            "Parts (from my diagram): extrinsic and intrinsic proteins, outside, inside, water liker, water hater"
           ],
           "found": "",
           "diagram": "",
@@ -286,18 +289,21 @@ export const STARTER = {
           "title": "Micelle",
           "definition": "A structure formed by amphipathic molecules.",
           "notes": [
-            "Ions & large anchored polar molecules need special ways to get in & out, while the others can squeeze through"
+            "A ball of phospholipids in water: heads face the water, tails hide in the middle (from my diagram)"
           ],
           "found": "",
           "diagram": "",
-          "image": "img/notes/micelle.jpg"
+          "image": "img/notes/micelle.jpg",
+          "filled": true
         },
         {
           "id": "mwlfuym8u12b5",
           "title": "Amphipathic molecule",
           "definition": "A molecule that has both hydrophilic & hydrophobic properties.",
           "notes": [
-            "Properties: - hydrophilic = polar molecule - hydrophobic = non-polar molecule"
+            "Contain both hydrophilic & hydrophobic properties",
+            "Others are steroids and glycolipids",
+            "Phospholipid: head = hydrophilic (polar molecule), tails = hydrophobic (non-polar molecule)"
           ],
           "found": "",
           "diagram": "",
@@ -306,9 +312,10 @@ export const STARTER = {
         {
           "id": "mwlfuym8olj2y",
           "title": "Hydrophilic",
-          "definition": "Having an affinity for water.",
+          "definition": "Water-loving (\"water liker\").",
           "notes": [
-            "philic = likes"
+            "philic = likes",
+            "Hydrophilic = polar molecule"
           ],
           "found": "",
           "diagram": "",
@@ -317,9 +324,10 @@ export const STARTER = {
         {
           "id": "mwlfuym8mqmuc",
           "title": "Hydrophobic",
-          "definition": "Having an aversion to water.",
+          "definition": "Water-hating (\"water hater\").",
           "notes": [
-            "phobic = hates"
+            "phobic = hater",
+            "Hydrophobic = non-polar molecule"
           ],
           "found": "",
           "diagram": "",
