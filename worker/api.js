@@ -1,8 +1,10 @@
-// Everything under /api/: reading photos of notes, the study helper, publishing notes to GitHub, and "who am I".
+// Everything under /api/: reading photos of notes, the study helper, publishing notes to GitHub, the course
+// documents (study design & work plan, also served at /course/<file>), and "who am I".
 import { organise, json } from './organise.js';
 import { assistant } from './assistant.js';
 import { access } from './access.js';
 import { publish, published } from './publish.js';
+import { course } from './course.js';
 
 export async function handleApi(request, env) {
   const { pathname } = new URL(request.url);
@@ -10,6 +12,7 @@ export async function handleApi(request, env) {
   if (pathname === '/api/assistant') return assistant(request, env);
   if (pathname === '/api/publish') return publish(request, env);
   if (pathname === '/api/published') return published(request, env);
+  if (pathname === '/api/course' || pathname.startsWith('/course/')) return course(request, env, 'CaseoH231/bio-study');
   if (pathname === '/api/whoami') {
     // Tells the app whether this device may use the AI features, and the address to put in OWNER_IPS.
     const a = access(request, env);

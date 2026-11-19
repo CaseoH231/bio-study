@@ -10,7 +10,7 @@ types = {'.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html; char
          '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.json': 'application/json'}
 files = {}
 for d, dirs, names in os.walk(root):
-    dirs[:] = [x for x in dirs if not x.startswith('.') and x not in ('tests', 'tools', 'node_modules', 'worker', 'published')]
+    dirs[:] = [x for x in dirs if not x.startswith('.') and x not in ('tests', 'tools', 'node_modules', 'worker', 'published', 'course')]
     for n in names:
         if n in skip or n.startswith('.'):
             continue
@@ -27,7 +27,7 @@ const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 export default {
   fetch(request, env) {
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/api/')) return handleApi(request, env);
+    if (path.startsWith('/api/') || path.startsWith('/course/')) return handleApi(request, env);
     const f = FILES[path] || FILES[path.replace(/\\/$/, '') + '/index.html'];
     if (!f) return new Response('Not found', { status: 404 });
     return new Response(bytes(f[1]), { headers: { 'content-type': f[0], 'cache-control': 'no-cache' } });

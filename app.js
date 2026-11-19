@@ -3,6 +3,7 @@ import { PRESETS } from './presets.js';
 import { organiseHeadstart } from './upgrades.js';
 import { mergeImport, separateImport, unseparate, normalise, OWNER_NAME } from './sync.js';
 import { REFS } from './refs.js';
+import { loadCourse, courseHtml, bindCourse, courseCount } from './course.js';
 import { DIAGRAMS, DIAGRAM_WORDS, CELLS, diagramSVG, cellSVG } from './diagrams.js';
 
 // ---------- saving ----------
@@ -81,6 +82,7 @@ function upgradeStarter(d) {
 }
 const HOME = '__home';
 let current = HOME;
+let courseOpen = false; // #/course: the study design and work plan
 let query = '';
 let cellKind = 'animal';
 let noteId = null; // the note whose page is open, if any
@@ -140,7 +142,8 @@ function render() {
   if (current !== HOME && !topicOf(current)) current = HOME;
   const notes = all();
   $('#sub').textContent = `${plural(notes.length, 'note')} · ${plural(db.topics.length, 'topic')}`;
-  $('#topics').innerHTML = `<button class="topic home ${current === HOME && !query ? 'on' : ''}" data-topic="${HOME}"><span class="ico">⌂</span><span class="nm">Dashboard</span></button>
+  $('#topics').innerHTML = `<button class="topic home ${current === HOME && !query && !courseOpen ? 'on' : ''}" data-topic="${HOME}"><span class="ico">⌂</span><span class="nm">Dashboard</span></button>
+    <button class="topic home ${courseOpen ? 'on' : ''}" data-course><span class="ico">📘</span><span class="nm">Course</span><span class="n">${courseCount() || ''}</span></button>
     <div class="nav-label">Topics</div>${navTree()}<button class="topic add" id="add-topic">+ New topic</button>`;
 
   const main = $('#main');
@@ -151,6 +154,7 @@ function render() {
       (hits.length ? `<div class="grid">${hits.map(({ e, t }) => card(e, t, true)).join('')}</div>` : '<p class="empty">Nothing found.</p>');
     return;
   }
+  if (courseOpen) { main.innerHTML = courseHtml(isOwner()); bindCourse(main, { isOwner, callApi, toast, redraw: render }); return; }
   if (noteId && find(noteId)) { main.innerHTML = notePage(); return bindNote(); }
   if (current === HOME) { main.innerHTML = dashboard(); return; }
   const t = topicOf(current);
@@ -198,6 +202,8 @@ function dashboard() {
       <h2>Your biology notes</h2><p class="lead">${facts}</p></div>
       <div class="tools">${notes.length ? '<button class="dark wide-only" data-act="cards">✦ Flashcards</button>' : ''}<button class="ai-only wide-only" data-act="scan">📷 Scan notes</button>
         <button class="primary" data-act="add">+ Add note</button></div></div>
+    <a class="c-link" href="#/course"><span class="c-ico">📘</span><span><b>Study design &amp; work plan</b>
+      <small>${courseCount() ? `${courseCount()} document${courseCount() === 1 ? '' : 's'} – what you’re learning this year, and when` : 'What you’re learning this year, and when'}</small></span></a>
     <h3 class="sect-h">Topics</h3>
     ${db.topics.length ? `<div class="tgrid">${kids().map(folderCard).join('')}
       <button class="tcard add" data-act="new-topic"><h3>+ New topic</h3><span class="tn">Ready-made or blank</span></button></div>`
@@ -216,7 +222,7 @@ function go(hash) { if (location.hash === hash || (hash === '#/' && !location.ha
 function route() {
   const [, kind, raw] = location.hash.match(/^#\/(topic|note)\/(.+)$/) || [];
   const id = raw && decodeURIComponent(raw);
-  query = ''; $('#search').value = ''; $('#msearch').value = ''; noteId = null;
+  query = ''; $('#search').value = ''; $('#msearch').value = ''; noteId = null; courseOpen = location.hash === '#/course';
   if (kind === 'note' && find(id)) { noteId = id; current = find(id).t.id; }
   else if (kind === 'topic' && topicOf(id)) enterTopic(id);
   else current = HOME;
@@ -278,6 +284,7 @@ $('#topics').addEventListener('click', (ev) => {
   const b = ev.target.closest('button');
   if (!b) return;
   if (b.id === 'add-topic') return openTopicPicker();
+  if (b.hasAttribute('data-course')) return go('#/course');
   const tog = ev.target.closest('[data-toggle]');
   if (tog) {
     const id = tog.dataset.toggle;
@@ -662,7 +669,7 @@ async function callApi(path, body) {
       data = await res.json().catch(() => ({}));
     } catch { res = null; }
     if (res?.status !== 401) break;
-    const p = prompt(attempt ? 'That passcode didn’t work. Try again:' : 'Enter the passcode for the AI features:');
+    const p = prompt(attempt ? 'That passcode didn’t work. Try again:' : 'Enter your passcode (it’s saved on this device):');
     if (!p) return { res, data, cancelled: true };
     setPasscode(p.trim());
   }
@@ -1162,18 +1169,18 @@ function runCards(deck, mode) {
 $('#btn-paste').onclick = openPaste;
 $('#btn-scan').onclick = openScan;
 $('#btn-cards').onclick = openCards;
-$('#search').addEventListener('input', (ev) => { query = ev.target.value.trim(); render(); });
+$('#search').addEventListener('input', (ev) => { query = ev.target.value.trim(); courseOpen = false; render(); });
 
 // ---------- phone: slide-out topics drawer and bottom tab bar ----------
 function setNav(open) {
   document.body.classList.toggle('nav-open', open);
   $('#nav-btn').setAttribute('aria-expanded', String(open));
   document.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.classList.toggle('on',
-    open ? b.dataset.tab === 'topics' : b.dataset.tab === 'home' && current === HOME && !noteId && !query));
+    open ? b.dataset.tab === 'topics' : b.dataset.tab === 'home' && current === HOME && !noteId && !query && !courseOpen));
 }
 $('#nav-btn').onclick = () => setNav(!document.body.classList.contains('nav-open'));
 $('#scrim').onclick = () => setNav(false);
-$('#msearch').addEventListener('input', (ev) => { query = ev.target.value.trim(); render(); });
+$('#msearch').addEventListener('input', (ev) => { query = ev.target.value.trim(); courseOpen = false; render(); });
 document.querySelector('.tabbar').addEventListener('click', (ev) => {
   const tab = ev.target.closest('[data-tab]')?.dataset.tab;
   if (tab !== 'topics') setNav(false);
@@ -1343,3 +1350,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.ser
 route();
 checkAI();
 syncWithPublished();
+loadCourse().then(() => render());

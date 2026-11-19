@@ -47,7 +47,7 @@ const path = require('path');
   });
   await p.goto('http://localhost:8766/');
   await p.waitForFunction(() => document.querySelector('#topics')?.textContent.includes('Enzymes'));
-  const newVisitor = await p.$$eval('#topics .topic .nm', (x) => x.map((e) => e.textContent).join('|'));
+  const newVisitor = await p.$$eval('#topics .topic:not([data-course]) .nm', (x) => x.map((e) => e.textContent).join('|'));
   await p.click('.more:not(.topic-menu) summary'); await p.click('#btn-publish'); await p.click('#pub-go');
   await p.waitForSelector('text=Published ✓');
   const published = sent?.notes?.topics?.[0]?.name === 'Enzymes – é ✓';
@@ -55,7 +55,7 @@ const path = require('path');
   await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('bio-study-notes-v1') || 'null') || { version: 1, starter: 3, topics: [] };
     d.topics = [{ id: 'mine', name: 'My own', color: '#000', entries: [] }]; localStorage.setItem('bio-study-notes-v1', JSON.stringify(d)); });
   await p.reload(); await p.waitForTimeout(500);
-  const keeps = await p.$$eval('#topics .topic .nm', (x) => x.map((e) => e.textContent).join('|'));
+  const keeps = await p.$$eval('#topics .topic:not([data-course]) .nm', (x) => x.map((e) => e.textContent).join('|'));
   await p.evaluate(() => localStorage.clear());
 
   // A friend (never published, no passcode) with their own notes, opening the app after the owner publishes.

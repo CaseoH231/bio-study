@@ -17,4 +17,5 @@ check "study helper and owner lock" test_helper.cjs "helper ok"
 check "publishing notes to GitHub" test_publish.cjs "publish ok"
 check "merging published notes" test_sync.cjs "sync ok"
 check "repairing wrapped notes" test_repair.cjs "repair ok"
+check "course: study design & work plan" test_course.cjs "course ok"
 [ $fails = 0 ] && echo "All tests passed." || { echo "$fails test(s) failed."; exit 1; }
