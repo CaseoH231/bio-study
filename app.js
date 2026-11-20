@@ -141,7 +141,8 @@ function navTree(id = null, depth = 0) {
 function render() {
   if (current !== HOME && !topicOf(current)) current = HOME;
   const notes = all();
-  $('#sub').textContent = `${plural(notes.length, 'note')} · ${plural(db.topics.length, 'topic')}`;
+  $('#sub').textContent = `${plural(notes.length, 'note')} · ${plural(db.topics.length, 'topic')}${isOwner() ? ' · 🔑 Owner' : ''}`;
+  $('#btn-owner').textContent = isOwner() ? 'Log out (owner)' : 'Log in as owner…';
   $('#topics').innerHTML = `<button class="topic home ${current === HOME && !query && !courseOpen ? 'on' : ''}" data-topic="${HOME}"><span class="ico">⌂</span><span class="nm">Dashboard</span></button>
     <button class="topic home ${courseOpen ? 'on' : ''}" data-course><span class="ico">📘</span><span class="nm">Course</span><span class="n">${courseCount() || ''}</span></button>
     <div class="nav-label">Topics</div>${navTree()}<button class="topic add" id="add-topic">+ New topic</button>`;
@@ -1319,6 +1320,30 @@ $('#btn-publish').onclick = () => {
   };
 };
 $('#btn-latest').onclick = () => { $('.more').open = false; syncWithPublished({ manual: true }); };
+
+// Owner log in / log out – e.g. to make changes on someone else's laptop, then hand it back as a normal copy.
+$('#btn-owner').onclick = async () => {
+  $('.more').open = false;
+  if (isOwner()) {
+    if (!confirm('Log out of owner mode on this device?\n\nIt goes back to a normal copy: your passcode is forgotten here, and it picks up your published notes like everyone else.')) return;
+    try { localStorage.removeItem(PASS_KEY); } catch { /* fine */ }
+    delete db.owner; save();
+    chat.length = 0;
+    await checkAI(); render();
+    toast('Logged out ✓ – this is a normal copy again');
+    syncWithPublished();
+    return;
+  }
+  const p = prompt('Owner passcode:\n\n(Remember: “Publish my notes” sends the notes on THIS device. Log out when you’re done.)');
+  if (!p) return;
+  setPasscode(p.trim());
+  // A passcode check that changes nothing (the server checks the passcode first, then finds nothing to do).
+  let res = null;
+  try { res = await fetch('api/course', { method: 'POST', headers: { 'content-type': 'application/json', 'x-passcode': passcode() }, body: JSON.stringify({ kind: 'design', action: 'check' }) }); } catch { /* offline */ }
+  if (res?.status === 400) { await checkAI(); render(); toast('Logged in as owner ✓ – remember to log out on someone else’s laptop'); return; }
+  try { localStorage.removeItem(PASS_KEY); } catch { /* fine */ }
+  toast(!res ? 'No internet connection.' : res.status === 401 ? 'Wrong passcode.' : 'Couldn’t check the passcode right now.');
+};
 
 $('#btn-reset').onclick = () => {
   if (!confirm('Throw away all your notes and go back to the notes from your notebook?')) return;

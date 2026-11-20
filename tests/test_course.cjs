@@ -77,6 +77,14 @@ const BASE = `http://localhost:${PORT}/`;
   const fr = await page(false);
   await fr.goto(BASE + '#/course'); await fr.waitForSelector('.c-file');
   check('friend: sees the documents but can’t upload or remove', !(await fr.$('#c-file')) && !(await fr.$('[data-cdel]')) && (await fr.textContent('.c-file')).includes('Study design 2027'));
+  // Owner log in / log out (e.g. on someone else's laptop).
+  await fr.evaluate(() => document.querySelector('#btn-owner').click());   // the prompt is answered "pw"
+  await fr.waitForFunction(() => document.querySelector('#sub').textContent.includes('Owner'));
+  check('log in: a normal copy becomes the owner’s (can upload course files)', !!(await fr.$('#c-file')) && (await fr.textContent('#btn-owner')).includes('Log out'));
+  await fr.evaluate(() => document.querySelector('#btn-owner').click());   // the confirm is accepted
+  await fr.waitForFunction(() => !document.querySelector('#sub').textContent.includes('Owner'));
+  const left = await fr.evaluate((k) => localStorage.getItem(k), PASS_KEY);
+  check('log out: passcode forgotten, back to a normal copy', !(await fr.$('#c-file')) && (!left || left === '""') && (await fr.textContent('#btn-owner')).includes('Log in'));
   await b.close(); globalThis.fetch = nodeFetch;
   console.log(checks.join('\n')); console.log('errors:', errs);
   console.log(checks.every((c) => c.startsWith('ok')) && !errs.length ? 'course ok' : 'course FAILED');
