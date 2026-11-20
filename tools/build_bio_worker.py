@@ -36,5 +36,5 @@ export default {
 """ % (json.dumps(os.path.abspath(os.path.join(root, "worker", "api.js"))), json.dumps(files))
 os.makedirs(out, exist_ok=True)
 open(os.path.join(out, 'worker.js'), 'w').write(worker)
-open(os.path.join(out, 'wrangler.jsonc'), 'w').write(json.dumps({'name': name, 'main': 'worker.js', 'compatibility_date': '2026-10-01', 'compatibility_flags': ['nodejs_compat'], 'ai': {'binding': 'AI'}, 'workers_dev': True}, indent=2))
+open(os.path.join(out, 'wrangler.jsonc'), 'w').write(json.dumps({'name': name, 'main': 'worker.js', 'compatibility_date': '2026-10-01', 'compatibility_flags': ['nodejs_compat'], 'ai': {'binding': 'AI'}, 'workers_dev': True, 'keep_vars': True}, indent=2))
 print(len(files) - 1, 'files packed,', len(worker) // 1024, 'KB')
