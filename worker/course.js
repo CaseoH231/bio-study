@@ -1,5 +1,5 @@
 // The course documents: the study design (what's learnt across the year) and the work plan (when).
-// Same file in bio-study and Specialist-Study. Saved in the repo under course/ with the GITHUB_TOKEN secret.
+// Same file in bio-study, Specialist-Study and Methods-study. Saved in the repo under course/ with the GITHUB_TOKEN secret.
 //   GET  /api/course          – the list: { design: [file…], plan: [file…], updatedAt }   (anyone)
 //   POST /api/course          – {action:'add', kind, name, type, data(base64)} or {action:'remove', kind, id}  (APP_PASSCODE)
 //   GET  /course/<file>       – a saved document (anyone)

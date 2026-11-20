@@ -1,5 +1,5 @@
 // The Course page (#/course): the study design (what's learnt across the year) and the work plan (when).
-// Same file in bio-study and Specialist-Study. The owner uploads PDFs or photos; everyone can view them.
+// Same file in bio-study, Specialist-Study and Methods-study. The owner uploads PDFs or photos; everyone can view them.
 // The app passes in what it needs: isOwner(), callApi(path, body) and toast(msg).
 const SAVED = 'study-course-cache';
 const KINDS = { design: { name: 'Study design', what: 'What you’ll learn across the year' }, plan: { name: 'Work plan', what: 'When each part is taught' } };

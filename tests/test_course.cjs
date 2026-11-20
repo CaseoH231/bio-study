@@ -1,10 +1,13 @@
 // The Course page (study design & work plan): the Worker with a fake GitHub, then the app as the owner and as a friend.
-// Same file in bio-study and Specialist-Study.
+// Same file in bio-study, Specialist-Study and Methods-study.
 const { chromium } = require('playwright');
 const path = require('path'), fs = require('fs');
 const ROOT = path.join(__dirname, '..');
-const SPEC = fs.existsSync(path.join(ROOT, 'lib.js'));
-const BASE = `http://localhost:${SPEC ? 8767 : 8766}/`;
+// Which app this is (from CLAUDE.md's first line): its test port and where it keeps the passcode.
+const APP = (fs.readFileSync(path.join(ROOT, 'CLAUDE.md'), 'utf8').match(/^# (\w+)/) || [])[1];
+const { port: PORT, passKey: PASS_KEY, json: PASS_JSON } = { Bio: { port: 8766, passKey: 'bio-study-passcode', json: false },
+  Specialist: { port: 8767, passKey: 'specialist-study-pass', json: true }, Methods: { port: 8768, passKey: 'methods-study-pass', json: true } }[APP];
+const BASE = `http://localhost:${PORT}/`;
 (async () => {
   const { handleApi } = await import(path.join(ROOT, 'worker', 'api.js'));
   // A fake GitHub contents API (any repo), remembering files; never the real one.
@@ -58,7 +61,7 @@ const BASE = `http://localhost:${SPEC ? 8767 : 8766}/`;
     });
     await p.route(/fonts\.g/, (x) => x.abort());
     await p.goto(BASE);
-    if (owner) { await p.evaluate((spec) => localStorage.setItem(spec ? 'specialist-study-pass' : 'bio-study-passcode', spec ? '"pw"' : 'pw'), SPEC); await p.reload(); }
+    if (owner) { await p.evaluate(([k, v]) => localStorage.setItem(k, v), [PASS_KEY, PASS_JSON ? '"pw"' : 'pw']); await p.reload(); }
     return p;
   }
   const o = await page(true);
