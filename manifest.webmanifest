@@ -1,10 +1,10 @@
 {
   "name": "Bio Study Notes",
-  "short_name": "Bio Notes",
+  "short_name": "Bio Study",
   "description": "Organise your biology notes with coloured, labelled diagrams and flashcards.",
   "start_url": "./",
   "scope": "./",
-  "id": "./",
+  "id": "./?app=bio-study-blue",
   "display": "standalone",
   "background_color": "#f3f6fb",
   "theme_color": "#17367d",
