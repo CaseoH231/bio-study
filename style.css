@@ -485,3 +485,38 @@ button.dark:hover { background: #b9e1f6; border-color: #b9e1f6; }
   #msearch { background: rgb(255 255 255 / .08); color: #e8f2f8; }
   aside { background: linear-gradient(175deg, #123445, #0b2230); }
 }
+
+/* ---------- top bar back to Pitch Black; soft coloured shapes behind the page ---------- */
+@media (max-width: 800px) {
+  .appbar { background: var(--pri); color: #fff; }
+  .appbar button { color: #fff; }
+  .appbar button:hover { background: rgb(255 255 255 / .1); }
+  #msearch { background: rgb(255 255 255 / .08); border-color: rgb(255 255 255 / .14); color: #fff; }
+  #msearch::placeholder { color: #8fb5cc; }
+}
+@media (prefers-color-scheme: dark) and (max-width: 800px) { .appbar { background: #080c0e; border-bottom: 1px solid var(--line); } }
+body::before, body::after { content: ''; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%; }
+body::before { /* arctic glow, top right, with a thin ring */
+  width: 620px; height: 620px; top: -220px; right: -180px;
+  background: radial-gradient(closest-side, rgb(159 212 242 / .55), rgb(159 212 242 / .18) 60%, transparent 72%),
+    radial-gradient(closest-side, transparent 86%, rgb(159 212 242 / .5) 87%, rgb(159 212 242 / .5) 88%, transparent 89%);
+}
+body::after { /* ember glow, bottom left, with a small ring */
+  width: 460px; height: 460px; bottom: -200px; left: 160px;
+  background: radial-gradient(closest-side, rgb(242 108 31 / .22), rgb(242 108 31 / .08) 60%, transparent 72%),
+    radial-gradient(circle at 88% 12%, transparent 9%, rgb(242 108 31 / .35) 9.6%, rgb(242 108 31 / .35) 10.4%, transparent 11%);
+}
+main { position: relative; }
+main::before { /* a soft arctic blob part-way down the page */
+  content: ''; position: absolute; z-index: -1; pointer-events: none; width: 340px; height: 260px; top: 420px; left: -120px;
+  border-radius: 42% 58% 63% 37% / 45% 40% 60% 55%; background: rgb(159 212 242 / .22); filter: blur(2px);
+}
+@media (prefers-color-scheme: dark) {
+  body::before { opacity: .35; } body::after { opacity: .6; } main::before { opacity: .35; }
+}
+@media (max-width: 800px) {
+  body::before { width: 380px; height: 380px; top: -140px; right: -160px; }
+  body::after { width: 320px; height: 320px; left: -120px; bottom: 40px; }
+  main::before { display: none; }
+}
+@media print { body::before, body::after, main::before { display: none; } }
