@@ -55,7 +55,7 @@ const BASE = `http://localhost:${PORT}/`;
     p.on('pageerror', (e) => errs.push(e.message)); p.on('dialog', (d) => d.accept(d.type() === 'prompt' ? 'pw' : undefined));
     await p.route(/\/(api|course|photo)\//, async (route) => {
       const q = route.request();
-      if (!/\/api\/course|\/course\//.test(q.url())) return route.fulfill({ status: 404, body: '{}' });
+      if (!/\/api\/(course|whoami)|\/course\//.test(q.url())) return route.fulfill({ status: 404, body: '{}' });
       const res = await handleApi(new Request(q.url(), { method: q.method(), headers: q.headers(), body: q.method() === 'POST' ? q.postData() : undefined }), env);
       route.fulfill({ status: res.status, headers: Object.fromEntries(res.headers), body: Buffer.from(await res.arrayBuffer()) });
     });
