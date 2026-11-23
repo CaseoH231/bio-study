@@ -436,3 +436,52 @@ img.c-doc { height: auto; }
   .c-open span { font-size: 40px; }
   .c-open small { color: var(--muted); font-weight: 400; }
 }
+
+/* ---------- balance: more Arctic Blue and Ember Orange, black mostly for text ---------- */
+aside { background: linear-gradient(175deg, #b9e1f6, var(--arctic)); color: var(--ink); }
+.brand small, .topic .n { color: #2c4b5a; opacity: 1; }
+#search { background: rgb(255 255 255 / .7); border-color: rgb(8 12 14 / .12); color: var(--ink); }
+#search::placeholder { color: #4a6b7b; }
+#search:focus { border-color: var(--leaf); box-shadow: 0 0 0 3px rgb(242 108 31 / .25); }
+.nav-label { color: #2f5568; font-weight: 700; }
+.topic, .side-tools button, .more summary { color: var(--ink); }
+.topic:hover, .side-tools button:hover, .more summary:hover { background: rgb(255 255 255 / .45); color: var(--ink); }
+.topic.on { background: rgb(255 255 255 / .7); color: var(--ink); box-shadow: inset 3px 0 var(--leaf); }
+.topic .tw[data-toggle]:hover { background: rgb(8 12 14 / .08); }
+.topic .dot { box-shadow: 0 0 0 2px rgb(255 255 255 / .7); }
+.topic.add { color: #2f5568; }
+.side-tools { border-top-color: rgb(8 12 14 / .12); }
+button.dark { background: var(--arctic); color: var(--ink); border-color: var(--arctic); }
+button.dark:hover { background: #b9e1f6; border-color: #b9e1f6; }
+#bot-btn { background: var(--leaf); color: var(--leaf-ink); }
+#bot-btn span { color: var(--leaf-ink); }
+.eyebrow { color: var(--leaf); }
+.sect-h::before { content: ''; align-self: center; width: 6px; height: 18px; border-radius: 3px; background: var(--leaf); }
+.msg.user .bubble { background: var(--arctic); color: var(--ink); }
+.bot-head { background: var(--arctic); color: var(--ink); }
+.bot-head button { color: var(--ink); border-color: rgb(8 12 14 / .25); }
+@media (max-width: 800px) {
+  .appbar { background: var(--arctic); color: var(--ink); }
+  .appbar button { color: var(--ink); }
+  .appbar button:hover { background: rgb(255 255 255 / .4); }
+  #msearch { background: rgb(255 255 255 / .7); border-color: rgb(8 12 14 / .12); color: var(--ink); }
+  #msearch::placeholder { color: #4a6b7b; }
+  aside { background: linear-gradient(175deg, #b9e1f6, var(--arctic)); }
+  .tabbar button.on { color: var(--leaf); }
+}
+@media (prefers-color-scheme: dark) {
+  aside { background: linear-gradient(175deg, #123445, #0b2230); color: #e8f2f8; }
+  .brand small, .topic .n, .nav-label, .topic.add { color: #9fc9df; }
+  #search { background: rgb(255 255 255 / .06); border-color: rgb(159 212 242 / .2); color: #e8f2f8; }
+  #search::placeholder { color: #8fb5cc; }
+  .topic, .side-tools button, .more summary { color: #e8f2f8; }
+  .topic:hover, .side-tools button:hover, .more summary:hover { background: rgb(159 212 242 / .1); color: #fff; }
+  .topic.on { background: rgb(159 212 242 / .16); color: var(--arctic); }
+  .side-tools { border-top-color: rgb(159 212 242 / .15); }
+  button.dark { background: var(--arctic); color: #080c0e; border-color: var(--arctic); }
+}
+@media (prefers-color-scheme: dark) and (max-width: 800px) {
+  .appbar { background: #123445; color: #e8f2f8; } .appbar button { color: #e8f2f8; }
+  #msearch { background: rgb(255 255 255 / .08); color: #e8f2f8; }
+  aside { background: linear-gradient(175deg, #123445, #0b2230); }
+}
